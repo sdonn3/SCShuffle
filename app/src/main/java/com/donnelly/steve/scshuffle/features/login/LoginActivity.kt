@@ -8,6 +8,7 @@ import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.exts.launchActivity
 import com.donnelly.steve.scshuffle.exts.shuffleApp
+import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.webAuth.WebAuthActivity
 import com.donnelly.steve.scshuffle.network.SCService
 import com.jakewharton.rxbinding2.view.clicks
@@ -52,6 +53,7 @@ class LoginActivity : AppCompatActivity() {
 
         if (session.authCode != null && session.authToken != null){
             Toast.makeText(this, "Previously logged in", Toast.LENGTH_LONG).show()
+            launchActivity<PlayerActivity> {}
         }
 
         val intent = intent
@@ -66,7 +68,8 @@ class LoginActivity : AppCompatActivity() {
                         .subscribe { tokenResponse ->
                             tokenResponse.accessToken?.let { token ->
                                 session.putAuthToken(token)
-                                Toast.makeText(this, "Logged in from code: $token", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this, "Logging you in...", Toast.LENGTH_LONG).show()
+                                launchActivity<PlayerActivity>{}
                             }
                         }
                 }

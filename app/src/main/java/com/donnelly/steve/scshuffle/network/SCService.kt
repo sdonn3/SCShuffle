@@ -1,8 +1,8 @@
 package com.donnelly.steve.scshuffle.network
 
 import com.donnelly.steve.scshuffle.network.models.TokenResponse
-import com.donnelly.steve.scshuffle.network.models.Track
 import com.donnelly.steve.scshuffle.network.models.User
+import io.reactivex.Observable
 import io.reactivex.Single
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -20,9 +20,6 @@ interface SCService{
     @POST("/oauth2/token?client_id=$SOUNDCLOUD_CLIENT_ID&client_secret=$SOUNDCLOUD_CLIENT_SECRET&redirect_uri=$REDIRECT_URI&grant_type=$GRANT_TYPE_AUTH_CODE")
     fun token(@Query("code") authCode: String): Single<TokenResponse>
 
-    @GET("/tracks?client_id=$SOUNDCLOUD_CLIENT_ID")
-    fun getRecentTracks(@Query("created_at")date: String): Single<List<Track>>
-
     @GET("/me")
-    fun me(@Query("oauth_token")token: String): Single<User>
+    fun me(@Query("oauth_token")token: String): Observable<User>
 }

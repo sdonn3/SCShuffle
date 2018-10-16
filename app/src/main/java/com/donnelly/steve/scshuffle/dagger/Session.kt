@@ -18,6 +18,11 @@ class Session (
         authToken = sharedPreferences.getString(OAUTH_TOKEN, null)
     }
 
+    fun logout() {
+        sharedPreferences.edit().putString(AUTH_CODE, null).apply()
+        sharedPreferences.edit().putString(OAUTH_TOKEN, null).apply()
+    }
+
     fun putAuthCode(code: String) {
         authCode = code
         sharedPreferences.edit().putString(AUTH_CODE, code).apply()

@@ -1,7 +1,7 @@
 package com.donnelly.steve.scshuffle.network.models
 
 data class User(
-        val id: Int?,
+        val id: Int,
         val permalink: String?,
         val uri: String?,
         val permalinkUrl: String?,

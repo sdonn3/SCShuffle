@@ -3,8 +3,9 @@ package com.donnelly.steve.scshuffle.dagger.modules
 import android.app.Application
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
-import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.dagger.Session
+import com.donnelly.steve.scshuffle.network.SCService
+import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -19,7 +20,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 @Module
-class NetModule(val baseUrl: String) {
+class NetModule(val baseUrl: String, val baseUrlV2: String) {
     companion object {
         private const val BYTES_PER_KILOBYTE = 1024
         private const val KILOBYTES_PER_MEGABYTE = 1024
@@ -71,6 +72,18 @@ class NetModule(val baseUrl: String) {
     @Singleton
     fun provideSCService(retrofit: Retrofit): SCService {
         return retrofit.create(SCService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSCServiceV2(gson: Gson, okHttpClient: OkHttpClient): SCServiceV2 {
+        val retrofit = Retrofit.Builder()
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .baseUrl(baseUrlV2)
+                .client(okHttpClient)
+                .build()
+        return retrofit.create(SCServiceV2::class.java)
     }
 
     @Provides
