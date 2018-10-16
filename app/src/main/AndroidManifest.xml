@@ -28,6 +28,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".features.webAuth.WebAuthActivity" />
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="33c934fd6210dccb1d687aae76a880aad3856421" />
     </application>
 
 </manifest>
