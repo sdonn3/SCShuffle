@@ -2,8 +2,11 @@ package com.donnelly.steve.scshuffle.application
 
 import android.app.Application
 import com.donnelly.steve.scshuffle.dagger.components.DaggerNetComponent
+import com.donnelly.steve.scshuffle.dagger.components.DaggerPlayerComponent
 import com.donnelly.steve.scshuffle.dagger.components.NetComponent
+import com.donnelly.steve.scshuffle.dagger.components.PlayerComponent
 import com.donnelly.steve.scshuffle.dagger.modules.AppModule
+import com.donnelly.steve.scshuffle.dagger.modules.DatabaseModule
 import com.donnelly.steve.scshuffle.dagger.modules.NetModule
 
 class ShuffleApplication : Application() {
@@ -13,6 +16,7 @@ class ShuffleApplication : Application() {
     }
 
     lateinit var netComponent: NetComponent
+    lateinit var playerComponent: PlayerComponent
 
     override fun onCreate() {
         super.onCreate()
@@ -20,6 +24,12 @@ class ShuffleApplication : Application() {
         netComponent = DaggerNetComponent.builder()
                 .appModule(AppModule(this))
                 .netModule(NetModule(BASE_URL, BASE_URL_V2))
+                .build()
+
+        playerComponent = DaggerPlayerComponent.builder()
+                .appModule(AppModule(this))
+                .netModule(NetModule(BASE_URL, BASE_URL_V2))
+                .databaseModule(DatabaseModule(this))
                 .build()
     }
 }

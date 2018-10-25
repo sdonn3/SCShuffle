@@ -24,7 +24,6 @@ import javax.inject.Inject
 
 
 class LoginActivity : AppCompatActivity() {
-
     @Inject
     lateinit var scService: SCService
 
@@ -52,7 +51,6 @@ class LoginActivity : AppCompatActivity() {
                 }
 
         if (session.authCode != null && session.authToken != null){
-            Toast.makeText(this, "Previously logged in", Toast.LENGTH_LONG).show()
             launchActivity<PlayerActivity> {}
         }
 
