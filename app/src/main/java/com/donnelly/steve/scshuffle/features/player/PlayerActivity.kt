@@ -6,7 +6,8 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ViewModelProviders
 import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
@@ -14,6 +15,7 @@ import com.donnelly.steve.scshuffle.exts.shuffleApp
 import com.donnelly.steve.scshuffle.features.player.adapter.ScreenSlidePagerAdapter
 import com.donnelly.steve.scshuffle.features.player.service.AudioService
 import com.donnelly.steve.scshuffle.features.player.service.AudioServiceBinder
+import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.CollectionResponse
@@ -28,7 +30,7 @@ import kotlinx.android.synthetic.main.activity_player.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : FragmentActivity() {
     companion object {
         private const val LIKE_LIMIT = 100
         private const val LOADED_PREVIOUSLY = "LoadedPreviously"
@@ -41,6 +43,8 @@ class PlayerActivity : AppCompatActivity() {
     @Inject lateinit var sharedPreferences: SharedPreferences
 
     var audioServiceBinder: AudioServiceBinder? = null
+
+    lateinit var viewmodel: PlayerViewModel
 
     private var serviceConnection = object: ServiceConnection {
         override fun onServiceDisconnected(componentName: ComponentName?) {}
@@ -60,6 +64,8 @@ class PlayerActivity : AppCompatActivity() {
 
         shuffleApp.playerComponent.inject(this)
         bindAudioService()
+        viewmodel = ViewModelProviders.of(this).get(PlayerViewModel::class.java)
+        viewmodel.init(shuffleApp)
 
         if (sharedPreferences.getBoolean(LOADED_PREVIOUSLY, false)) {
             btnLoad.visibility = View.GONE
@@ -88,6 +94,7 @@ class PlayerActivity : AppCompatActivity() {
                                 .flatMap { meResponse ->
                                     loadTracks(meResponse.id, null, mutableListOf())
                                 }
+
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe ({trackList ->
@@ -115,7 +122,7 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    /*private fun getUrlAndStream(track: Track?){
+    fun getUrlAndStream(track: Track?){
         track?.streamUrl?.let{urlQueryString ->
             disposables += scServiceV2
                     .getStreamUrl(urlQueryString, SCServiceV2.SOUNDCLOUD_CLIENT_ID)
@@ -123,10 +130,9 @@ class PlayerActivity : AppCompatActivity() {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe{response ->
                         audioServiceBinder?.startAudioTrack(response.url)
-                        tvNowPlaying.text = "Now playing: ${track.title}"
                     }
         }
-    }*/
+    }
 
     private fun loadTracks(userId: Int, offset: Long?, listOfTracks: MutableList<Track>): Observable<MutableList<Track>> {
         return scServiceV2

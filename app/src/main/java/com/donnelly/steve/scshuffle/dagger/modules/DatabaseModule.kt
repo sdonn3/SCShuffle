@@ -14,7 +14,7 @@ class DatabaseModule(application: Application) {
 
     @Singleton
     @Provides
-    fun providesDatabse(): ShuffleDatabase {
+    fun providesDatabase(): ShuffleDatabase {
         return shuffleDatabase
     }
 
