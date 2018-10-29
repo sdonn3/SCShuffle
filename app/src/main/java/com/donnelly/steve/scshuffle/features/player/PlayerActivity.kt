@@ -1,12 +1,14 @@
 package com.donnelly.steve.scshuffle.features.player
 
 import android.content.*
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.dagger.Session
@@ -16,6 +18,7 @@ import com.donnelly.steve.scshuffle.features.player.adapter.ScreenSlidePagerAdap
 import com.donnelly.steve.scshuffle.features.player.service.AudioService
 import com.donnelly.steve.scshuffle.features.player.service.AudioServiceBinder
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
+import com.donnelly.steve.scshuffle.glide.GlideApp
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.CollectionResponse
@@ -30,7 +33,8 @@ import kotlinx.android.synthetic.main.activity_player.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class PlayerActivity : FragmentActivity() {
+class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
+
     companion object {
         private const val LIKE_LIMIT = 100
         private const val LOADED_PREVIOUSLY = "LoadedPreviously"
@@ -51,10 +55,14 @@ class PlayerActivity : FragmentActivity() {
         override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
             audioServiceBinder = binder as AudioServiceBinder
             audioServiceBinder?.initAudioPlayer()
+            audioServiceBinder?.setCompletionListener(this@PlayerActivity)
+            audioServiceBinder?.requestWakelock(this@PlayerActivity)
         }
     }
 
     var trackListSize: Int? = null
+
+    var currentlyPlayingTrack : Track? = null
 
     private val disposables: CompositeDisposable by lazy { CompositeDisposable() }
 
@@ -73,6 +81,50 @@ class PlayerActivity : FragmentActivity() {
         } else {
             btnLoad.visibility = View.VISIBLE
         }
+
+        viewmodel.playlist.observe(this, Observer {
+            if (it.size > 0 && it[0] != currentlyPlayingTrack) {
+                currentlyPlayingTrack = it[0]
+                GlideApp
+                        .with(this)
+                        .load(currentlyPlayingTrack?.artworkUrl)
+                        .into(ivPlayerImage)
+
+                getUrlAndStream(it[0])
+            }
+            else if (it.size == 0){
+                viewmodel.loadRandomTrack()
+            }
+        })
+
+        disposables += tvPlay
+                .clicks()
+                .throttleFirst(500L, TimeUnit.MILLISECONDS)
+                .subscribe{
+                    audioServiceBinder?.playAudio()
+                }
+
+        disposables += tvPause
+                .clicks()
+                .throttleFirst(500L, TimeUnit.MILLISECONDS)
+                .subscribe{
+                    audioServiceBinder?.pauseAudio()
+                }
+
+        disposables += tvNext
+                .clicks()
+                .throttleFirst(500L, TimeUnit.MILLISECONDS)
+                .subscribe{
+                    viewmodel.playlist.value?.let{ playlist ->
+                        if (playlist.size > 0) {
+                            viewmodel.playlist.value?.removeAt(0)
+                            viewmodel.playlist.value = viewmodel.playlist.value
+                        }
+                        else {
+                            viewmodel.loadRandomTrack()
+                        }
+                    }
+                }
 
         disposables += trackDao
                 .getCount()
@@ -109,6 +161,11 @@ class PlayerActivity : FragmentActivity() {
                                 })
                 }
         }
+    }
+
+    override fun onCompletion(mp: MediaPlayer?) {
+        viewmodel.playlist.value?.removeAt(0)
+        viewmodel.playlist.value = viewmodel.playlist.value
     }
 
     private fun showLoadedScreen() {

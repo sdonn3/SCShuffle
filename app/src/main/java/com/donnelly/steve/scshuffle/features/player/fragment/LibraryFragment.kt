@@ -9,7 +9,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
-import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.player.adapter.LibraryAdapter
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import kotlinx.android.synthetic.main.fragment_library.*
@@ -18,9 +17,8 @@ class LibraryFragment : Fragment() {
 
     lateinit var viewmodel : PlayerViewModel
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_library, container, false)
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+        inflater.inflate(R.layout.fragment_library, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -38,10 +36,13 @@ class LibraryFragment : Fragment() {
             adapter.libraryAdapterStatus.observe(this, Observer {
                 when (it.intent) {
                     LibraryAdapter.LibraryStatus.Intent.Play -> {
-                        (activity as PlayerActivity).getUrlAndStream(it.track)
+                        viewmodel.playlist.value?.clear()
+                        viewmodel.playlist.value?.add(it.track)
+                        viewmodel.playlist.value = viewmodel.playlist.value
                     }
                     LibraryAdapter.LibraryStatus.Intent.Queue -> {
-
+                        viewmodel.playlist.value?.add(it.track)
+                        viewmodel.playlist.value = viewmodel.playlist.value
                     }
                 }
             })

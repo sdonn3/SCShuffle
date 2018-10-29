@@ -16,6 +16,9 @@ interface TrackDao {
     @Query("SELECT * FROM trackData WHERE scShuffleId = :scID")
     fun loadSingle(scID: Int): Flowable<Track>
 
+    @Query("SELECT * FROM trackData ORDER BY RANDOM() Limit 1")
+    fun returnRandomTrack(): Flowable<Track>
+
     @Insert(onConflict = REPLACE)
     fun insert(track: Track)
 

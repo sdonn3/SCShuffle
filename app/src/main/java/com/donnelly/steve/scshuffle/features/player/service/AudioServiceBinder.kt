@@ -1,11 +1,18 @@
 package com.donnelly.steve.scshuffle.features.player.service
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Binder
+import android.os.PowerManager
 
 class AudioServiceBinder : MediaPlayer.OnPreparedListener, Binder(){
     private var audioPlayer: MediaPlayer? = null
+
+    fun requestWakelock(context: Context){
+        audioPlayer?.setWakeMode(context , PowerManager.PARTIAL_WAKE_LOCK)
+        audioPlayer?.setScreenOnWhilePlaying(true)
+    }
 
     fun startAudioTrack(audioString: String){
         audioPlayer?.reset()
@@ -17,17 +24,12 @@ class AudioServiceBinder : MediaPlayer.OnPreparedListener, Binder(){
         }
     }
 
-    fun playAudio() {
-        if (audioPlayer?.isPlaying!!.not()) {
-            audioPlayer?.prepareAsync()
-        }
-        else {
-            audioPlayer?.start()
-        }
+    fun setCompletionListener(listener: MediaPlayer.OnCompletionListener) {
+        audioPlayer?.setOnCompletionListener(listener)
     }
 
-    fun stopAudio(){
-        audioPlayer?.stop()
+    fun playAudio() {
+        audioPlayer?.start()
     }
 
     fun pauseAudio(){
