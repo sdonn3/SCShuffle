@@ -22,6 +22,15 @@ class PlayerViewModel : ViewModel() {
     @Inject
     lateinit var trackDao: TrackDao
 
+    var livePagedList: LiveData<PagedList<Track>>? = null
+    var searchString: String? = null
+
+    val searchLiveData: MutableLiveData<SearchStatus> by lazy {
+        val liveData = MutableLiveData<SearchStatus>()
+        liveData.postValue(SearchStatus(Status.SUCCESS))
+        liveData
+    }
+
     private val disposables: CompositeDisposable by lazy { CompositeDisposable() }
 
     val playlist: MutableLiveData<ArrayList<Track>> by lazy {
@@ -30,14 +39,27 @@ class PlayerViewModel : ViewModel() {
         liveData
     }
 
-    val trackListLiveData : LiveData<PagedList<Track>> by lazy {
-        val dataSourceFactory = trackDao.getAllTracksPaged()
-        LivePagedListBuilder<Int, Track>(dataSourceFactory, PAGE_SIZE).build()
-    }
-
     fun init(shuffleApplication: ShuffleApplication) {
         shuffleApplication.playerComponent.inject(this)
+        livePagedList = getTracks()
+        searchLiveData.value = SearchStatus(Status.SUCCESS)
     }
+
+    fun getTracks() : LiveData<PagedList<Track>> = LivePagedListBuilder(trackDao.getAllTracksPaged(),
+            PagedList.Config.Builder()
+                    .setPageSize(50)
+                    .setPrefetchDistance(20)
+                    .build())
+            .setInitialLoadKey(0)
+            .build()
+
+    fun getFilteredTracks(input: String) : LiveData<PagedList<Track>> = LivePagedListBuilder(trackDao.getSearchedTracksPaged(input),
+            PagedList.Config.Builder()
+                    .setPageSize(50)
+                    .setPrefetchDistance(20)
+                    .build())
+            .setInitialLoadKey(0)
+            .build()
 
     fun loadRandomTrack() {
         disposables += trackDao
@@ -48,5 +70,24 @@ class PlayerViewModel : ViewModel() {
                     playlist.value?.add(it)
                     playlist.value = playlist.value
                 }
+    }
+
+    fun searchEntered(inputString: String) {
+        searchString = inputString
+        livePagedList = getFilteredTracks(inputString)
+        searchLiveData.value = SearchStatus(Status.SUCCESS)
+    }
+
+    fun searchCleared() {
+        searchString = null
+        livePagedList = getTracks()
+        searchLiveData.value = SearchStatus(Status.SUCCESS)
+    }
+
+    class SearchStatus (
+        val status: Status = Status.SUCCESS
+    )
+    enum class Status{
+        SUCCESS
     }
 }

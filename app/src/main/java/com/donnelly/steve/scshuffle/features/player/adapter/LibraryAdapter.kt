@@ -21,7 +21,6 @@ class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAda
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder =
         TrackViewHolder(LayoutInflater.from(context).inflate(R.layout.item_library_track, parent, false))
 
-
     override fun onBindViewHolder(holder: TrackViewHolder, position: Int) {
         val track = getItem(position)
         track?.let{

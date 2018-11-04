@@ -2,6 +2,7 @@ package com.donnelly.steve.scshuffle.network
 
 import com.donnelly.steve.scshuffle.network.models.StreamUrlResponse
 import com.donnelly.steve.scshuffle.network.models.TrackLikesResponse
+import com.donnelly.steve.scshuffle.network.models.WaveFormResponse
 import io.reactivex.Observable
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -18,4 +19,7 @@ interface SCServiceV2{
 
     @GET("")
     fun getStreamUrl(@Url urlString: String, @Query("client_id") clientId : String): Observable<StreamUrlResponse>
+
+    @GET("")
+    fun getWaveform(@Url urlString: String): Observable<WaveFormResponse>
 }

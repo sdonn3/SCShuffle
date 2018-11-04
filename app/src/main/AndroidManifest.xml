@@ -30,10 +30,11 @@
         </activity>
         <activity android:name=".features.webAuth.WebAuthActivity" />
         <activity android:name=".features.player.PlayerActivity" />
+
         <service
             android:name=".features.player.service.AudioService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true"/>
 
         <meta-data
             android:name="io.fabric.ApiKey"

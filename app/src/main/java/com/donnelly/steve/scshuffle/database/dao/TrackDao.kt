@@ -10,6 +10,9 @@ import io.reactivex.Flowable
 
 @Dao
 interface TrackDao {
+    @Query("SELECT * FROM trackData WHERE title LIKE '%' || :input || '%' ORDER BY title ASC")
+    fun getSearchedTracksPaged(input: String): DataSource.Factory<Int, Track>
+
     @Query("SELECT * FROM trackData ORDER BY title ASC")
     fun getAllTracksPaged(): DataSource.Factory<Int, Track>
 

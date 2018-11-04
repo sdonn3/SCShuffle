@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SCShuffle</string>
+    <string name="search_songs">Search Songs</string>
 </resources>

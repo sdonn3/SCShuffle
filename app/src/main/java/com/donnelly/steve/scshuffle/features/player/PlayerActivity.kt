@@ -5,9 +5,11 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.view.Menu
 import android.view.View
 import android.widget.Toast
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.donnelly.steve.scshuffle.R
@@ -23,6 +25,7 @@ import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.CollectionResponse
 import com.donnelly.steve.scshuffle.network.models.Track
+import com.jakewharton.rxbinding2.support.v7.widget.RxSearchView.queryTextChanges
 import com.jakewharton.rxbinding2.view.clicks
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -33,8 +36,7 @@ import kotlinx.android.synthetic.main.activity_player.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
-
+class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, SearchView.OnCloseListener {
     companion object {
         private const val LIKE_LIMIT = 100
         private const val LOADED_PREVIOUSLY = "LoadedPreviously"
@@ -75,6 +77,8 @@ class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
         viewmodel = ViewModelProviders.of(this).get(PlayerViewModel::class.java)
         viewmodel.init(shuffleApp)
 
+        setSupportActionBar(toolbar)
+
         if (sharedPreferences.getBoolean(LOADED_PREVIOUSLY, false)) {
             btnLoad.visibility = View.GONE
             showLoadedScreen()
@@ -90,6 +94,17 @@ class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
                         .load(currentlyPlayingTrack?.artworkUrl)
                         .into(ivPlayerImage)
 
+                visualizer.clear()
+
+                it[0].waveformUrl?.let{waveUrl ->
+                    disposables += scServiceV2
+                            .getWaveform(waveUrl)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe{waveResponse ->
+                                visualizer.setAmplitudes(waveResponse.samples)
+                            }
+                }
                 getUrlAndStream(it[0])
             }
             else if (it.size == 0){
@@ -97,7 +112,7 @@ class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
             }
         })
 
-        disposables += tvPlay
+        /*disposables += tvPlay
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
@@ -124,7 +139,7 @@ class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
                             viewmodel.loadRandomTrack()
                         }
                     }
-                }
+                }*/
 
         disposables += trackDao
                 .getCount()
@@ -161,6 +176,30 @@ class PlayerActivity : FragmentActivity(), MediaPlayer.OnCompletionListener {
                                 })
                 }
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_player, menu)
+        val searchView = menu.findItem(R.id.action_search).actionView as SearchView
+        searchView.apply{
+            setOnCloseListener(this@PlayerActivity)
+            queryHint = "Song Name Search"
+            maxWidth = Integer.MAX_VALUE
+
+            queryTextChanges(this)
+                    .debounce(500L, TimeUnit.MILLISECONDS)
+                    .filter{_ -> !searchView.isIconified}
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe{
+                        viewmodel.searchEntered(it.toString())
+                    }
+        }
+        return true
+    }
+
+    override fun onClose(): Boolean {
+        viewmodel.searchCleared()
+        return true
     }
 
     override fun onCompletion(mp: MediaPlayer?) {

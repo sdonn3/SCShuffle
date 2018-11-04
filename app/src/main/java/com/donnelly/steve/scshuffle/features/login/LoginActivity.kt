@@ -1,7 +1,6 @@
 package com.donnelly.steve.scshuffle.features.login
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.crashlytics.android.Crashlytics
 import com.donnelly.steve.scshuffle.R
@@ -20,8 +19,6 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_login.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-
-
 
 class LoginActivity : AppCompatActivity() {
     @Inject
@@ -52,6 +49,7 @@ class LoginActivity : AppCompatActivity() {
 
         if (session.authCode != null && session.authToken != null){
             launchActivity<PlayerActivity> {}
+            finish()
         }
 
         val intent = intent
@@ -66,8 +64,8 @@ class LoginActivity : AppCompatActivity() {
                         .subscribe { tokenResponse ->
                             tokenResponse.accessToken?.let { token ->
                                 session.putAuthToken(token)
-                                Toast.makeText(this, "Logging you in...", Toast.LENGTH_LONG).show()
                                 launchActivity<PlayerActivity>{}
+                                finish()
                             }
                         }
                 }
