@@ -1,7 +1,6 @@
 package com.donnelly.steve.scshuffle.features.player.adapter
 
 import android.content.Context
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -42,13 +41,15 @@ class PlaylistAdapter (val context: Context) : RecyclerView.Adapter<PlaylistAdap
         fun bind(track: Track, position: Int) {
             itemView.apply{
                 if (position == 0) {
-                    setBackgroundColor(Color.YELLOW)
-                    tvClear.visibility = View.GONE
+                    ivClear.visibility = View.GONE
+                }
+                else {
+                    tvCurrentlyPlaying.visibility = View.GONE
                 }
 
                 tvTrackName.text = track.title
 
-                tvClear
+                ivClear
                         .clicks()
                         .throttleFirst(500L, TimeUnit.MILLISECONDS)
                         .subscribe{

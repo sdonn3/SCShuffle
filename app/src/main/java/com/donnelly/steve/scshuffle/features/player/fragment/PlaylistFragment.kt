@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.features.player.adapter.PlaylistAdapter
@@ -30,6 +31,8 @@ class PlaylistFragment : Fragment() {
             rvPlaylist.setHasFixedSize(true)
             rvPlaylist.layoutManager = LinearLayoutManager(context)
             rvPlaylist.adapter = adapter
+
+            rvPlaylist.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
 
             viewmodel.playlist.observe(this, Observer {
                 adapter.setTrackList(it)

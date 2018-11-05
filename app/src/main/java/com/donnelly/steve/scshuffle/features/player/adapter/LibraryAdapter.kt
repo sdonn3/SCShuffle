@@ -9,6 +9,7 @@ import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.donnelly.steve.scshuffle.R
+import com.donnelly.steve.scshuffle.exts.transformDuration
 import com.donnelly.steve.scshuffle.network.models.Track
 import com.jakewharton.rxbinding2.view.clicks
 import kotlinx.android.synthetic.main.item_library_track.view.*
@@ -34,7 +35,11 @@ class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAda
             itemView.apply{
                 tvTrackName.text = track.title
 
-                tvPlay
+                track.duration?.let{
+                    tvDuration.text = it.transformDuration()
+                }
+
+                ivPlay
                         .clicks()
                         .throttleFirst(500L, TimeUnit.MILLISECONDS)
                         .subscribe{
@@ -44,7 +49,7 @@ class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAda
                             )
                         }
 
-                tvQueue
+                ivQueue
                         .clicks()
                         .throttleFirst(500L, TimeUnit.MILLISECONDS)
                         .subscribe{

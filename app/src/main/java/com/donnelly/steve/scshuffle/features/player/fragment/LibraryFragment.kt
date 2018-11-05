@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.paging.PagedList
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.features.player.adapter.LibraryAdapter
@@ -38,6 +39,8 @@ class LibraryFragment : Fragment() {
                     observeListItems(trackList)
                 })
             })
+
+            rvLibraryTracks.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
 
             adapter.libraryAdapterStatus.observe(this, Observer {
                 when (it.intent) {

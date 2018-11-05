@@ -3,4 +3,9 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
+
+
+    <color name="toolbarBackground">#FF9800</color>
+    <color name="toolbarText">#424242</color>
+    <color name="playerBackground">#d7dbe2</color>
 </resources>

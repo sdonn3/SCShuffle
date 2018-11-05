@@ -11,6 +11,8 @@ import android.view.View;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.palette.graphics.Palette;
+
 public class VisualizerView extends View {
     private static final int LINE_WIDTH = 1; // width of visualizer lines
     private static final int LINE_SCALE = 1; // scales visualizer lines
@@ -18,6 +20,7 @@ public class VisualizerView extends View {
     private int width; // width of this View
     private int height; // height of this View
     private Paint linePaint; // specifies line drawing characteristics
+    private Palette palette;
 
     // constructor
     public VisualizerView(Context context, AttributeSet attrs) {
@@ -40,6 +43,11 @@ public class VisualizerView extends View {
         amplitudes.clear();
     }
 
+    public void setPalette(Palette palette) {
+        this.palette = palette;
+        linePaint.setColor(palette.getMutedColor(Color.parseColor("#e8964e")));
+    }
+
     public void setAmplitudes(List<Float> amps) {
         this.amplitudes = amps;
         invalidate();
@@ -59,13 +67,10 @@ public class VisualizerView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         int middle = height / 2; // get the middle of the View
-        float curX = 100; // start curX at zero
+        float curX = 0; // start curX at zero
 
         int everyThird = 0;
         float total = 0;
-
-        canvas.drawLine(0, middle, width, middle, linePaint);
-        canvas.drawLine(0, middle+1, width, middle+1, linePaint);
 
         // for each item in the amplitudes ArrayList
         for (float power : amplitudes) {
@@ -73,7 +78,7 @@ public class VisualizerView extends View {
                 everyThird = 0;
                 total+= power;
                 float scaledHeight = (total / 3) / LINE_SCALE; // scale the power
-                curX += LINE_WIDTH; // increase X by LINE_WIDTH
+                curX += LINE_WIDTH + 1; // increase X by LINE_WIDTH
 
                 Log.e("crux",String.valueOf(curX));
 

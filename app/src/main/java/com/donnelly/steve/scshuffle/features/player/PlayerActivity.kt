@@ -1,6 +1,8 @@
 package com.donnelly.steve.scshuffle.features.player
 
 import android.content.*
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -12,10 +14,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.palette.graphics.Palette
+import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.transition.Transition
 import com.donnelly.steve.scshuffle.R
+import com.donnelly.steve.scshuffle.application.RxBus
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.exts.shuffleApp
+import com.donnelly.steve.scshuffle.exts.transformDuration
 import com.donnelly.steve.scshuffle.features.player.adapter.ScreenSlidePagerAdapter
 import com.donnelly.steve.scshuffle.features.player.service.AudioService
 import com.donnelly.steve.scshuffle.features.player.service.AudioServiceBinder
@@ -36,7 +43,8 @@ import kotlinx.android.synthetic.main.activity_player.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, SearchView.OnCloseListener {
+class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
+
     companion object {
         private const val LIKE_LIMIT = 100
         private const val LOADED_PREVIOUSLY = "LoadedPreviously"
@@ -47,6 +55,7 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
     @Inject lateinit var session: Session
     @Inject lateinit var trackDao: TrackDao
     @Inject lateinit var sharedPreferences: SharedPreferences
+    @Inject lateinit var rxBus: RxBus
 
     var audioServiceBinder: AudioServiceBinder? = null
 
@@ -59,6 +68,7 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
             audioServiceBinder?.initAudioPlayer()
             audioServiceBinder?.setCompletionListener(this@PlayerActivity)
             audioServiceBinder?.requestWakelock(this@PlayerActivity)
+            audioServiceBinder?.rxBus = rxBus
         }
     }
 
@@ -89,22 +99,36 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
         viewmodel.playlist.observe(this, Observer {
             if (it.size > 0 && it[0] != currentlyPlayingTrack) {
                 currentlyPlayingTrack = it[0]
+                toolbar.title = it[0].title
                 GlideApp
                         .with(this)
                         .load(currentlyPlayingTrack?.artworkUrl)
                         .into(ivPlayerImage)
 
-                visualizer.clear()
+                GlideApp
+                        .with(this)
+                        .asBitmap()
+                        .load(currentlyPlayingTrack?.artworkUrl)
+                        .into(object: SimpleTarget<Bitmap>(){
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                visualizer.clear()
+                                val palette = Palette.from(resource).generate()
+                                toolbar.setBackgroundColor(palette.getDarkVibrantColor(Color.WHITE))
+                                toolbar.setTitleTextColor(palette.getLightVibrantColor(Color.LTGRAY))
 
-                it[0].waveformUrl?.let{waveUrl ->
-                    disposables += scServiceV2
-                            .getWaveform(waveUrl)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe{waveResponse ->
-                                visualizer.setAmplitudes(waveResponse.samples)
+                                it[0].waveformUrl?.let{waveUrl ->
+                                    disposables += scServiceV2
+                                            .getWaveform(waveUrl)
+                                            .subscribeOn(Schedulers.io())
+                                            .observeOn(AndroidSchedulers.mainThread())
+                                            .subscribe{waveResponse ->
+                                                visualizer.setPalette(palette)
+                                                visualizer.setAmplitudes(waveResponse.samples)
+                                            }
+                                }
                             }
-                }
+                        })
+
                 getUrlAndStream(it[0])
             }
             else if (it.size == 0){
@@ -112,21 +136,33 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
             }
         })
 
-        /*disposables += tvPlay
+        disposables += rxBus
+                .getEvents()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe{
+            if (it is Pair<*, *>) {
+                val progress = it.first as Int
+                val duration = it.second as Int
+                val progressString = "${progress.transformDuration()}/${duration.transformDuration()}"
+                tvProgress.text = progressString
+            }
+        }
+
+        disposables += ivPlay
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
                     audioServiceBinder?.playAudio()
                 }
 
-        disposables += tvPause
+        disposables += ivPause
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
                     audioServiceBinder?.pauseAudio()
                 }
 
-        disposables += tvNext
+        disposables += ivSkip
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
@@ -139,7 +175,7 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
                             viewmodel.loadRandomTrack()
                         }
                     }
-                }*/
+                }
 
         disposables += trackDao
                 .getCount()
@@ -181,8 +217,12 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_player, menu)
         val searchView = menu.findItem(R.id.action_search).actionView as SearchView
+        val searchActionView = menu.findItem(R.id.action_search)
         searchView.apply{
-            setOnCloseListener(this@PlayerActivity)
+            setOnCloseListener {
+                viewmodel.searchCleared()
+                false
+            }
             queryHint = "Song Name Search"
             maxWidth = Integer.MAX_VALUE
 
@@ -194,11 +234,6 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener, Se
                         viewmodel.searchEntered(it.toString())
                     }
         }
-        return true
-    }
-
-    override fun onClose(): Boolean {
-        viewmodel.searchCleared()
         return true
     }
 

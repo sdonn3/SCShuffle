@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
+import com.donnelly.steve.scshuffle.application.RxBus
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.network.models.Track
@@ -22,8 +23,17 @@ class PlayerViewModel : ViewModel() {
     @Inject
     lateinit var trackDao: TrackDao
 
+    @Inject
+    lateinit var rxBus: RxBus
+
     var livePagedList: LiveData<PagedList<Track>>? = null
     var searchString: String? = null
+
+    val timestampLiveData: MutableLiveData<Int> by lazy {
+        val liveData = MutableLiveData<Int>()
+        liveData.value = 0
+        liveData
+    }
 
     val searchLiveData: MutableLiveData<SearchStatus> by lazy {
         val liveData = MutableLiveData<SearchStatus>()
@@ -43,9 +53,16 @@ class PlayerViewModel : ViewModel() {
         shuffleApplication.playerComponent.inject(this)
         livePagedList = getTracks()
         searchLiveData.value = SearchStatus(Status.SUCCESS)
+        rxBus.getEvents()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    if (it is Int) {
+                        timestampLiveData.value = it
+                    }
+                }
     }
 
-    fun getTracks() : LiveData<PagedList<Track>> = LivePagedListBuilder(trackDao.getAllTracksPaged(),
+    fun getTracks(): LiveData<PagedList<Track>> = LivePagedListBuilder(trackDao.getAllTracksPaged(),
             PagedList.Config.Builder()
                     .setPageSize(50)
                     .setPrefetchDistance(20)
@@ -53,7 +70,7 @@ class PlayerViewModel : ViewModel() {
             .setInitialLoadKey(0)
             .build()
 
-    fun getFilteredTracks(input: String) : LiveData<PagedList<Track>> = LivePagedListBuilder(trackDao.getSearchedTracksPaged(input),
+    fun getFilteredTracks(input: String): LiveData<PagedList<Track>> = LivePagedListBuilder(trackDao.getSearchedTracksPaged(input),
             PagedList.Config.Builder()
                     .setPageSize(50)
                     .setPrefetchDistance(20)
@@ -66,7 +83,7 @@ class PlayerViewModel : ViewModel() {
                 .returnRandomTrack()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe{
+                .subscribe {
                     playlist.value?.add(it)
                     playlist.value = playlist.value
                 }
@@ -84,10 +101,11 @@ class PlayerViewModel : ViewModel() {
         searchLiveData.value = SearchStatus(Status.SUCCESS)
     }
 
-    class SearchStatus (
-        val status: Status = Status.SUCCESS
+    class SearchStatus(
+            val status: Status = Status.SUCCESS
     )
-    enum class Status{
+
+    enum class Status {
         SUCCESS
     }
 }

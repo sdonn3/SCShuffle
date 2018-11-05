@@ -14,7 +14,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:fullBackupContent="false">
-        <activity android:name=".features.login.LoginActivity">
+        <activity android:name=".features.login.LoginActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,8 +29,10 @@
                     android:host="redirect"/>
             </intent-filter>
         </activity>
-        <activity android:name=".features.webAuth.WebAuthActivity" />
-        <activity android:name=".features.player.PlayerActivity" />
+        <activity android:name=".features.webAuth.WebAuthActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".features.player.PlayerActivity"
+            android:screenOrientation="portrait"/>
 
         <service
             android:name=".features.player.service.AudioService"
