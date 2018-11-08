@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
+import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.player.adapter.PlaylistAdapter
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import kotlinx.android.synthetic.main.fragment_playlist.*
@@ -39,8 +40,7 @@ class PlaylistFragment : Fragment() {
             })
 
             adapter.playlistStatus.observe(this, Observer {
-                viewmodel.playlist.value?.removeAt(it.position)
-                viewmodel.playlist.value = viewmodel.playlist.value
+                (activity as PlayerActivity).removeSong(it.position)
             })
         }
     }

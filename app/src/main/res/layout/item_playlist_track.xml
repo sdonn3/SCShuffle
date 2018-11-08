@@ -17,7 +17,7 @@
 
     <TextView
         android:id="@+id/tvCurrentlyPlaying"
-        android:text="Currently Playing"
+        android:text="@string/currently_playing"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
@@ -31,6 +31,14 @@
         android:layout_height="30dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/clear_song" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/rightBarrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="left"
+        app:constraint_referenced_ids="tvCurrentlyPlaying, ivClear"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
