@@ -3,10 +3,10 @@ package com.donnelly.steve.scshuffle.features.player
 import android.content.*
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.widget.Toast
@@ -25,7 +25,6 @@ import com.donnelly.steve.scshuffle.exts.shuffleApp
 import com.donnelly.steve.scshuffle.exts.transformDuration
 import com.donnelly.steve.scshuffle.features.player.adapter.ScreenSlidePagerAdapter
 import com.donnelly.steve.scshuffle.features.player.service.AudioService
-import com.donnelly.steve.scshuffle.features.player.service.AudioServiceBinder
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.glide.GlideApp
 import com.donnelly.steve.scshuffle.network.SCService
@@ -43,7 +42,7 @@ import kotlinx.android.synthetic.main.activity_player.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
+class PlayerActivity : AppCompatActivity() {
 
     companion object {
         private const val LIKE_LIMIT = 100
@@ -57,18 +56,14 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
     @Inject lateinit var sharedPreferences: SharedPreferences
     @Inject lateinit var rxBus: RxBus
 
-    var audioServiceBinder: AudioServiceBinder? = null
+    var audioServiceBinder: AudioService.AudioBinder? = null
 
-    lateinit var viewmodel: PlayerViewModel
+    private lateinit var viewmodel: PlayerViewModel
 
     private var serviceConnection = object: ServiceConnection {
         override fun onServiceDisconnected(componentName: ComponentName?) {}
         override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
-            audioServiceBinder = binder as AudioServiceBinder
-            audioServiceBinder?.initAudioPlayer()
-            audioServiceBinder?.setCompletionListener(this@PlayerActivity)
-            audioServiceBinder?.requestWakelock(this@PlayerActivity)
-            audioServiceBinder?.rxBus = rxBus
+            audioServiceBinder = binder as AudioService.AudioBinder
         }
     }
 
@@ -97,7 +92,8 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
         }
 
         viewmodel.playlist.observe(this, Observer {
-            if (it.size > 0 && it[0] != currentlyPlayingTrack) {
+            Log.d("ScShuffle", "Triggered from song ending")
+            if (it.size > 0) {
                 currentlyPlayingTrack = it[0]
                 toolbar.title = it[0].title
                 GlideApp
@@ -128,11 +124,6 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
                                 }
                             }
                         })
-
-                getUrlAndStream(it[0])
-            }
-            else if (it.size == 0){
-                viewmodel.loadRandomTrack()
             }
         })
 
@@ -152,29 +143,21 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
-                    audioServiceBinder?.playAudio()
+                    audioServiceBinder?.getService()?.playAudio()
                 }
 
         disposables += ivPause
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
-                    audioServiceBinder?.pauseAudio()
+                    audioServiceBinder?.getService()?.pauseAudio()
                 }
 
         disposables += ivSkip
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
                 .subscribe{
-                    viewmodel.playlist.value?.let{ playlist ->
-                        if (playlist.size > 0) {
-                            viewmodel.playlist.value?.removeAt(0)
-                            viewmodel.playlist.value = viewmodel.playlist.value
-                        }
-                        else {
-                            viewmodel.loadRandomTrack()
-                        }
-                    }
+                    audioServiceBinder?.getService()?.goToNextSong()
                 }
 
         disposables += trackDao
@@ -190,7 +173,7 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
         disposables += btnLoad
                 .clicks()
                 .throttleFirst(500L, TimeUnit.MILLISECONDS)
-                .subscribe{ _ ->
+                .subscribe{
                     pbLoading.visibility = View.VISIBLE
                     session.authToken?.let{ token ->
                         disposables += scService.me(token)
@@ -205,19 +188,32 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
                                     Toast.makeText(this, "Added ${trackList.size} songs to library", Toast.LENGTH_LONG).show()
                                     trackListSize = trackList.size
                                     sharedPreferences.edit().putBoolean(LOADED_PREVIOUSLY, true).apply()
-                                },{
+                                    btnLoad.visibility = View.GONE
+                                    showLoadedScreen()
+                                },{error ->
                                     pbLoading.visibility = View.GONE
-                                    Toast.makeText(this, it.localizedMessage, Toast.LENGTH_LONG).show()
-                                    it.printStackTrace()
+                                    Toast.makeText(this, error.localizedMessage, Toast.LENGTH_LONG).show()
+                                    error.printStackTrace()
                                 })
                 }
         }
     }
 
+    fun playSong(track: Track) {
+        audioServiceBinder?.getService()?.playSong(track)
+    }
+
+    fun queueSong(track: Track) {
+        audioServiceBinder?.getService()?.queueSong(track)
+    }
+
+    fun removeSong(position: Int) {
+        audioServiceBinder?.getService()?.removeSong(position)
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_player, menu)
         val searchView = menu.findItem(R.id.action_search).actionView as SearchView
-        val searchActionView = menu.findItem(R.id.action_search)
         searchView.apply{
             setOnCloseListener {
                 viewmodel.searchCleared()
@@ -228,7 +224,7 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
 
             queryTextChanges(this)
                     .debounce(500L, TimeUnit.MILLISECONDS)
-                    .filter{_ -> !searchView.isIconified}
+                    .filter{ !searchView.isIconified}
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe{
                         viewmodel.searchEntered(it.toString())
@@ -237,34 +233,19 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
         return true
     }
 
-    override fun onCompletion(mp: MediaPlayer?) {
-        viewmodel.playlist.value?.removeAt(0)
-        viewmodel.playlist.value = viewmodel.playlist.value
-    }
-
     private fun showLoadedScreen() {
         viewpager.adapter = ScreenSlidePagerAdapter(supportFragmentManager)
     }
 
     private fun bindAudioService(){
         if (audioServiceBinder == null) {
-            val intent = Intent(this, AudioService::class.java)
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            Intent(this, AudioService::class.java).also { intent ->
+                bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            }
         }
     }
 
-    fun getUrlAndStream(track: Track?){
-        track?.streamUrl?.let{urlQueryString ->
-            disposables += scServiceV2
-                    .getStreamUrl(urlQueryString, SCServiceV2.SOUNDCLOUD_CLIENT_ID)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe{response ->
-                        audioServiceBinder?.startAudioTrack(response.url)
-                    }
-        }
-    }
-
+    //TODO: Move all the song loading stuff to the ViewModel, clean up its UI
     private fun loadTracks(userId: Int, offset: Long?, listOfTracks: MutableList<Track>): Observable<MutableList<Track>> {
         return scServiceV2
                 .getLikes(
@@ -281,7 +262,8 @@ class PlayerActivity : AppCompatActivity(), MediaPlayer.OnCompletionListener {
                                 listOfTracks.add(response.track)
                             }
                         }
-                        loadTracks(userId, Uri.parse(urlString).getQueryParameter("offset").toLong(), listOfTracks)
+                        val urlOffset = Uri.parse(urlString).getQueryParameter("offset")
+                        loadTracks(userId, urlOffset?.toLong(), listOfTracks)
                     } ?: run{
                         response.collection?.forEach {response->
                             populateStreamUrl(response)

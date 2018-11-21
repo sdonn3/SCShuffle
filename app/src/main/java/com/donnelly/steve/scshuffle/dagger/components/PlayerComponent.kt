@@ -6,6 +6,7 @@ import com.donnelly.steve.scshuffle.dagger.modules.NetModule
 import com.donnelly.steve.scshuffle.database.ShuffleDatabase
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.features.player.PlayerActivity
+import com.donnelly.steve.scshuffle.features.player.service.AudioService
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 interface PlayerComponent{
     fun inject(activity: PlayerActivity)
     fun inject(viewModel: PlayerViewModel)
+    fun inject(service: AudioService)
 
     fun trackDao() : TrackDao
     fun shuffleDatabase() : ShuffleDatabase
