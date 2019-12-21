@@ -11,6 +11,7 @@ import androidx.paging.PagedList
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
+import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.player.adapter.LibraryAdapter
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.network.models.Track
@@ -45,20 +46,17 @@ class LibraryFragment : Fragment() {
             adapter.libraryAdapterStatus.observe(this, Observer {
                 when (it.intent) {
                     LibraryAdapter.LibraryStatus.Intent.Play -> {
-                        viewmodel.playlist.value?.clear()
-                        viewmodel.playlist.value?.add(it.track)
-                        viewmodel.playlist.value = viewmodel.playlist.value
+                        (activity as PlayerActivity).playSong(it.track)
                     }
                     LibraryAdapter.LibraryStatus.Intent.Queue -> {
-                        viewmodel.playlist.value?.add(it.track)
-                        viewmodel.playlist.value = viewmodel.playlist.value
+                        (activity as PlayerActivity).queueSong(it.track)
                     }
                 }
             })
         }
     }
 
-    fun observeListItems(pagedList: PagedList<Track>?) {
+    private fun observeListItems(pagedList: PagedList<Track>?) {
         adapter.submitList(pagedList)
         rvLibraryTracks.smoothScrollToPosition(0)
     }
