@@ -11,7 +11,6 @@ import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.webAuth.WebAuthActivity
 import com.donnelly.steve.scshuffle.network.SCService
 import com.jakewharton.rxbinding2.view.clicks
-import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -31,7 +30,6 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Fabric.with(this, Crashlytics())
 
         setContentView(R.layout.activity_login)
         shuffleApp.netComponent.inject(this)
