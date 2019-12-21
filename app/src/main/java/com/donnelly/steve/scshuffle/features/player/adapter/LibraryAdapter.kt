@@ -15,9 +15,7 @@ import com.jakewharton.rxbinding2.view.clicks
 import kotlinx.android.synthetic.main.item_library_track.view.*
 import java.util.concurrent.TimeUnit
 
-class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAdapter.TrackViewHolder>(LibraryAdapter.TrackDiffCallback()) {
-
-    var libraryAdapterStatus = MutableLiveData<LibraryStatus>()
+class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAdapter.TrackViewHolder>(TrackDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder =
         TrackViewHolder(LayoutInflater.from(context).inflate(R.layout.item_library_track, parent, false))
@@ -28,7 +26,6 @@ class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAda
             holder.bind(track)
         }
     }
-
 
     inner class TrackViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         fun bind(track: Track) {

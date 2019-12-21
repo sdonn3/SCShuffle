@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy.REPLACE
 import androidx.room.Query
 import com.donnelly.steve.scshuffle.network.models.Track
-import io.reactivex.Flowable
 
 @Dao
 interface TrackDao {
@@ -17,10 +16,10 @@ interface TrackDao {
     fun getAllTracksPaged(): DataSource.Factory<Int, Track>
 
     @Query("SELECT * FROM trackData WHERE scShuffleId = :scID")
-    fun loadSingle(scID: Int): Flowable<Track>
+    fun loadSingle(scID: Int): Track
 
     @Query("SELECT * FROM trackData ORDER BY RANDOM() Limit 1")
-    fun returnRandomTrack(): Flowable<Track>
+    fun returnRandomTrack(): Track
 
     @Insert(onConflict = REPLACE)
     fun insert(track: Track)
@@ -29,5 +28,5 @@ interface TrackDao {
     fun clearAllTracks()
 
     @Query("SELECT count(*) FROM trackData")
-    fun getCount(): Flowable<Int>
+    fun getCount(): Int
 }

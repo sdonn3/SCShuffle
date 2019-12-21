@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 
 private const val AUTH_CODE = "AUTH_CODE"
 private const val OAUTH_TOKEN = "OAUTH_TOKEN"
+private const val INITIAL_LOAD = "INITIAL_LOAD"
 
 class Session (
         private val sharedPreferences: SharedPreferences
@@ -15,5 +16,4 @@ class Session (
     var authToken: String?
         get() = sharedPreferences.getString(OAUTH_TOKEN, null)
         set(value) = sharedPreferences.edit().putString(OAUTH_TOKEN, value).apply()
-
 }

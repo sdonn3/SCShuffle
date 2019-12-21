@@ -9,10 +9,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import com.donnelly.steve.scshuffle.R
-import com.donnelly.steve.scshuffle.network.SCService
-import com.donnelly.steve.scshuffle.network.SCServiceV2.Companion.SOUNDCLOUD_CLIENT_ID
 import kotlinx.android.synthetic.main.activity_web_auth.*
 
+private const val SOUNDCLOUD_CLIENT_ID = "IhtlaRd6b0rFJltJuuJANoRF5c2CQB9a"
 private const val REDIRECT_URI = "scshuffle://redirect"
 private const val url: String =
         "https://www.soundcloud.com/connect?" +

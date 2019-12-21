@@ -19,29 +19,25 @@ import kotlinx.android.synthetic.main.fragment_library.*
 
 class LibraryFragment : Fragment() {
 
-    lateinit var viewmodel : PlayerViewModel
-    lateinit var adapter : LibraryAdapter
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(R.layout.fragment_library, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        activity?.let{activity->
-            viewmodel = ViewModelProviders.of(activity).get(PlayerViewModel::class.java)
-            adapter = LibraryAdapter(activity)
-            rvLibraryTracks.setHasFixedSize(true)
-            rvLibraryTracks.layoutManager = LinearLayoutManager(context)
-            rvLibraryTracks.adapter = adapter
+        activity?.let{ activity->
+            val viewmodel = ViewModelProviders.of(activity).get(PlayerViewModel::class.java)
+            val adapter = LibraryAdapter(activity)
 
-            viewmodel.searchLiveData.observe(this, Observer {
-                viewmodel.livePagedList?.removeObservers(this)
-                viewmodel.livePagedList?.observe(this, Observer { trackList ->
-                    observeListItems(trackList)
-                })
+            rvLibraryTracks.apply {
+                setHasFixedSize(true)
+                layoutManager = LinearLayoutManager(context)
+                this.adapter = adapter
+                addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+            }
+
+            viewmodel.playerStateLiveData.observe(viewLifecycleOwner, Observer { playerState ->
+                adapter.submitList(playerState.songPagedList)
             })
-
-            rvLibraryTracks.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
 
             adapter.libraryAdapterStatus.observe(this, Observer {
                 when (it.intent) {
@@ -54,10 +50,5 @@ class LibraryFragment : Fragment() {
                 }
             })
         }
-    }
-
-    private fun observeListItems(pagedList: PagedList<Track>?) {
-        adapter.submitList(pagedList)
-        rvLibraryTracks.smoothScrollToPosition(0)
     }
 }
