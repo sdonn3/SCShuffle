@@ -15,7 +15,6 @@ import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
@@ -62,7 +61,6 @@ class NetModule(val baseUrl: String, val baseUrlV2: String) {
     fun provideRetrofit(gson: Gson, okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .baseUrl(baseUrl)
                 .client(okHttpClient)
                 .build()
@@ -79,7 +77,6 @@ class NetModule(val baseUrl: String, val baseUrlV2: String) {
     fun provideSCServiceV2(gson: Gson, okHttpClient: OkHttpClient): SCServiceV2 {
         val retrofit = Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .baseUrl(baseUrlV2)
                 .client(okHttpClient)
                 .build()

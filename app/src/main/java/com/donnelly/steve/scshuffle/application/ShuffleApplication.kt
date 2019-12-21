@@ -9,11 +9,10 @@ import com.donnelly.steve.scshuffle.dagger.modules.AppModule
 import com.donnelly.steve.scshuffle.dagger.modules.DatabaseModule
 import com.donnelly.steve.scshuffle.dagger.modules.NetModule
 
+private const val BASE_URL = "https://api.soundcloud.com"
+private const val BASE_URL_V2 = "https://api-v2.soundcloud.com"
+
 class ShuffleApplication : Application() {
-    companion object {
-        private const val BASE_URL = "https://api.soundcloud.com"
-        private const val BASE_URL_V2 = "https://api-v2.soundcloud.com"
-    }
 
     lateinit var netComponent: NetComponent
     lateinit var playerComponent: PlayerComponent

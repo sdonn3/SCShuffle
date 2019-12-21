@@ -10,7 +10,9 @@ import javax.inject.Singleton
 
 @Module
 class DatabaseModule(application: Application) {
-    private val shuffleDatabase : ShuffleDatabase = Room.databaseBuilder(application, ShuffleDatabase::class.java, "shuffleDB").fallbackToDestructiveMigration().build()
+    private val shuffleDatabase: ShuffleDatabase = Room.databaseBuilder(
+            application, ShuffleDatabase::class.java, "shuffleDB"
+    ).fallbackToDestructiveMigration().build()
 
     @Singleton
     @Provides
