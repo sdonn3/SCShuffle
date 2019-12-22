@@ -15,9 +15,10 @@ import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.player.adapter.LibraryAdapter
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.network.models.Track
+import dagger.android.support.DaggerFragment
 import kotlinx.android.synthetic.main.fragment_library.*
 
-class LibraryFragment : Fragment() {
+class LibraryFragment : DaggerFragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
             inflater.inflate(R.layout.fragment_library, container, false)

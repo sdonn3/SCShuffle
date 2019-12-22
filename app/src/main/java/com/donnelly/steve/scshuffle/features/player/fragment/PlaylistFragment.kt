@@ -16,13 +16,14 @@ import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.player.adapter.PlaylistAdapter
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
+import dagger.android.support.DaggerFragment
 import kotlinx.android.synthetic.main.fragment_playlist.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
-class PlaylistFragment : Fragment() {
+class PlaylistFragment : DaggerFragment() {
 
     lateinit var viewmodel : PlayerViewModel
 
@@ -34,7 +35,6 @@ class PlaylistFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        this.
         activity?.let{activity->
             viewmodel = ViewModelProviders.of(activity).get(PlayerViewModel::class.java)
             val adapter = PlaylistAdapter(activity, clearCallback = { clearPosition ->

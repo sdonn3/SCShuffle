@@ -83,7 +83,7 @@ class PlayerViewModel @Inject constructor(
             var nextUrl: String? = "InitialUrl"
             var offset: Long?
             while (nextUrl != null) {
-                val userId = session.authCode?.let { scService.me(it).id } ?: 0
+                val userId = session.authToken?.let { scService.me(it).id } ?: 0
                 offset = Uri.parse(nextUrl)?.getQueryParameter("offset")?.toLong()
                 val likedSongResponse = scServiceV2.getLikes(
                         userId = userId,

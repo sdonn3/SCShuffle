@@ -10,6 +10,7 @@ import com.donnelly.steve.scshuffle.exts.shuffleApp
 import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.webAuth.WebAuthActivity
 import com.donnelly.steve.scshuffle.network.SCService
+import com.donnelly.steve.scshuffle.network.models.TokenResponse
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_login.*
 import kotlinx.coroutines.Dispatchers
@@ -34,14 +35,15 @@ class LoginActivity : DaggerAppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        if (session.authCode != null && session.authToken != null){
+        if (session.authCode != null && session.authToken != null) {
             navigateToPlayer()
         }
 
         val authCode = intent?.data?.getQueryParameter("code")
         if (authCode != null) {
-            lifecycleScope.launch (Dispatchers.IO) {
-                val tokenResponse = scService.token(authCode)
+            session.authCode = authCode
+            lifecycleScope.launch(Dispatchers.IO) {
+                val tokenResponse: TokenResponse = scService.token(authCode)
                 session.authToken = tokenResponse.accessToken
                 withContext(Dispatchers.Main) {
                     navigateToPlayer()
@@ -51,7 +53,7 @@ class LoginActivity : DaggerAppCompatActivity() {
 
         lifecycleScope.launch {
             ivConnect.clicks()
-                    .onEach{
+                    .onEach {
                         launchActivity<WebAuthActivity> {
                             finish()
                         }
@@ -61,7 +63,7 @@ class LoginActivity : DaggerAppCompatActivity() {
     }
 
     private fun navigateToPlayer() {
-        launchActivity<PlayerActivity>{}
+        launchActivity<PlayerActivity> {}
         finish()
     }
 }

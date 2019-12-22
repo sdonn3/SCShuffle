@@ -8,7 +8,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.Url
 
-private const val SOUNDCLOUD_CLIENT_ID = "IhtlaRd6b0rFJltJuuJANoRF5c2CQB9a"
+private const val SOUNDCLOUD_CLIENT_ID = "YUKXoArFcqrlQn9tfNHvvyfnDISj04zk"
 
 interface SCServiceV2 {
     @GET("/users/{userId}/track_likes?client_id=$SOUNDCLOUD_CLIENT_ID")
