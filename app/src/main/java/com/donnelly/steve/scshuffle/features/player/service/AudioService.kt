@@ -16,6 +16,7 @@ import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.Track
+import dagger.android.DaggerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,7 +30,7 @@ import javax.inject.Inject
 private const val NOTIFICATION_CHANNEL = "SC_AUDIO_SERVICE"
 private const val NOTIFICATION_ID = 95
 
-class AudioService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
+class AudioService : DaggerService(), MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
 
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
@@ -39,8 +40,10 @@ class AudioService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnCo
 
     @Inject
     lateinit var scServiceV2: SCServiceV2
+
     @Inject
     lateinit var trackDao: TrackDao
+
     @Inject
     lateinit var broadcasters: Broadcasters
 
@@ -64,7 +67,7 @@ class AudioService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnCo
                 .build()
 
         startForeground(NOTIFICATION_ID, notification)
-        broadcasters.playlistChannel.asFlow().onEach {  newPlaylist ->
+        broadcasters.playlistChannel.asFlow().onEach { newPlaylist ->
             playlist = newPlaylist.toMutableList()
         }.launchIn(serviceScope)
     }

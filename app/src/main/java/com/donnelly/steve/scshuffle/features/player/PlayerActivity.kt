@@ -29,6 +29,7 @@ import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.glide.GlideApp
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
+import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_player.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -40,7 +41,7 @@ import javax.inject.Inject
 
 @FlowPreview
 @ExperimentalCoroutinesApi
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : DaggerAppCompatActivity() {
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
@@ -52,8 +53,6 @@ class PlayerActivity : AppCompatActivity() {
     lateinit var session: Session
     @Inject
     lateinit var trackDao: TrackDao
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
     @Inject
     lateinit var broadcasters: Broadcasters
 
@@ -71,7 +70,7 @@ class PlayerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
-        viewmodel = ViewModelProviders.of(this, viewModelFactory).get(PlayerViewModel::class.java)
+        viewmodel = ViewModelProviders.of(this, viewModelFactory)[PlayerViewModel::class.java]
 
         Intent(this, AudioService::class.java).also { intent ->
             bindService(intent, serviceConnection, BIND_AUTO_CREATE)

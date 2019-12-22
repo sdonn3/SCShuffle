@@ -21,22 +21,13 @@ import javax.inject.Inject
 private const val DATABASE_PAGE_SIZE = 50
 private const val LIKED_SONG_LIMIT = 100
 
-class PlayerViewModel : ViewModel() {
-
-    @Inject
-    lateinit var session: Session
-
-    @Inject
-    lateinit var trackDao: TrackDao
-
-    @Inject
-    lateinit var scService: SCService
-
-    @Inject
-    lateinit var scServiceV2: SCServiceV2
-
-    @Inject
-    lateinit var broadcasters: Broadcasters
+class PlayerViewModel @Inject constructor(
+        private val session: Session,
+        private val trackDao: TrackDao,
+        private val scService: SCService,
+        private val scServiceV2: SCServiceV2,
+        private val broadcasters: Broadcasters
+) : ViewModel() {
 
     private var playlist = mutableListOf<Track>()
 

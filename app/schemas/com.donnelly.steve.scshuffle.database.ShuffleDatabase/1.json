@@ -1,0 +1,99 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "7f9472d92959893c497e923917fefce0",
+    "entities": [
+      {
+        "tableName": "trackData",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`scShuffleId` INTEGER PRIMARY KEY AUTOINCREMENT, `artworkUrl` TEXT, `duration` INTEGER, `fullDuration` INTEGER, `genre` TEXT, `id` INTEGER, `streamable` INTEGER, `tagList` TEXT, `title` TEXT, `userId` TEXT, `waveformUrl` TEXT, `streamUrl` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "scShuffleId",
+            "columnName": "scShuffleId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "artworkUrl",
+            "columnName": "artworkUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "duration",
+            "columnName": "duration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fullDuration",
+            "columnName": "fullDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genre",
+            "columnName": "genre",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "streamable",
+            "columnName": "streamable",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tagList",
+            "columnName": "tagList",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "waveformUrl",
+            "columnName": "waveformUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "streamUrl",
+            "columnName": "streamUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "scShuffleId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"7f9472d92959893c497e923917fefce0\")"
+    ]
+  }
+}

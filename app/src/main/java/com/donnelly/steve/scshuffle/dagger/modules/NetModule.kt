@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
+import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
@@ -26,24 +27,17 @@ private const val KILOBYTES_PER_MEGABYTE = 1024
 
 @Module
 class NetModule {
-
     @Provides
-    @Named
+    @Named("baseUrl")
     fun provideBaseUrl() = "https://api.soundcloud.com"
 
     @Provides
-    @Named
+    @Named("baseUrl2")
     fun provideBaseUrlV2() = "https://api-v2.soundcloud.com"
 
     @Provides
     @Singleton
-    fun provideSharedPreferences(application: Application): SharedPreferences {
-        return PreferenceManager.getDefaultSharedPreferences(application)
-    }
-
-    @Provides
-    @Singleton
-    fun provideOkHttpCache(application: Application): Cache {
+    fun provideOkHttpCache(application: ShuffleApplication): Cache {
         val cacheSize = 10L * BYTES_PER_KILOBYTE * KILOBYTES_PER_MEGABYTE
         return Cache(application.cacheDir, cacheSize)
     }
@@ -68,10 +62,14 @@ class NetModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(gson: Gson, okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(
+            @Named("baseUrl") baseUrl: String,
+            gson: Gson,
+            okHttpClient: OkHttpClient
+    ): Retrofit {
         return Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .baseUrl(provideBaseUrl())
+                .baseUrl(baseUrl)
                 .client(okHttpClient)
                 .build()
     }
@@ -84,10 +82,15 @@ class NetModule {
 
     @Provides
     @Singleton
-    fun provideSCServiceV2(gson: Gson, okHttpClient: OkHttpClient): SCServiceV2 {
+    fun provideSCServiceV2(
+            @Named("baseUrl2") baseUrl2:
+            String, gson: Gson,
+            okHttpClient:
+            OkHttpClient
+    ): SCServiceV2 {
         val retrofit = Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .baseUrl(provideBaseUrlV2())
+                .baseUrl(baseUrl2)
                 .client(okHttpClient)
                 .build()
         return retrofit.create(SCServiceV2::class.java)

@@ -1,6 +1,5 @@
 package com.donnelly.steve.scshuffle.dagger.modules
 
-import android.app.Application
 import androidx.room.Room
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
 import com.donnelly.steve.scshuffle.database.ShuffleDatabase
@@ -10,11 +9,10 @@ import dagger.Provides
 import javax.inject.Singleton
 
 @Module
-class DatabaseModule(val application: ShuffleApplication) {
-
+class DatabaseModule {
     @Singleton
     @Provides
-    fun providesDatabase(): ShuffleDatabase {
+    fun providesDatabase(application: ShuffleApplication): ShuffleDatabase {
         return Room.databaseBuilder(
                 application,
                 ShuffleDatabase::class.java,

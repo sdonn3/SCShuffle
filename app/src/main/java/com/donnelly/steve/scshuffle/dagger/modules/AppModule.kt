@@ -1,6 +1,8 @@
 package com.donnelly.steve.scshuffle.dagger.modules
 
 import android.app.Application
+import android.content.SharedPreferences
+import android.preference.PreferenceManager
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
 import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import dagger.Module
@@ -8,13 +10,12 @@ import dagger.Provides
 import javax.inject.Singleton
 
 @Module
-class AppModule(val application: ShuffleApplication) {
+class AppModule {
 
     @Provides
     @Singleton
-    fun provideApplication(): Application {
-        return application
-    }
+    fun providesSharedPreferences(app: ShuffleApplication): SharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(app)
 
     @Provides
     @Singleton

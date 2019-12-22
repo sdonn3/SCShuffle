@@ -10,6 +10,7 @@ import com.donnelly.steve.scshuffle.exts.shuffleApp
 import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.webAuth.WebAuthActivity
 import com.donnelly.steve.scshuffle.network.SCService
+import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_login.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +21,7 @@ import kotlinx.coroutines.withContext
 import reactivecircus.flowbinding.android.view.clicks
 import javax.inject.Inject
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : DaggerAppCompatActivity() {
 
     @Inject
     lateinit var scService: SCService
@@ -32,7 +33,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-        shuffleApp.netComponent.inject(this)
 
         if (session.authCode != null && session.authToken != null){
             navigateToPlayer()
