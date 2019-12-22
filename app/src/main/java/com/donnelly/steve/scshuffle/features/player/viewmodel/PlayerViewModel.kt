@@ -1,10 +1,11 @@
 package com.donnelly.steve.scshuffle.features.player.viewmodel
 
-import android.icu.text.AlphabeticIndex
 import android.net.Uri
 import androidx.lifecycle.*
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
+import com.donnelly.steve.scshuffle.application.ShuffleApplication
+import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.network.SCService
@@ -12,6 +13,8 @@ import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.CollectionResponse
 import com.donnelly.steve.scshuffle.network.models.Track
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,6 +34,17 @@ class PlayerViewModel : ViewModel() {
 
     @Inject
     lateinit var scServiceV2: SCServiceV2
+
+    @Inject
+    lateinit var broadcasters: Broadcasters
+
+    private var playlist = mutableListOf<Track>()
+
+    init {
+        broadcasters.playlistChannel.asFlow().onEach { newPlaylist ->
+            playlist = newPlaylist.toMutableList()
+        }
+    }
 
     private val allTracksLiveData = LivePagedListBuilder(trackDao.getAllTracksPaged(),
             PagedList.Config.Builder()
@@ -53,11 +67,9 @@ class PlayerViewModel : ViewModel() {
         else -> getFilteredTracksFromDatabse(searchString)
     }
     private val loadingLiveData = MutableLiveData<Boolean>(false)
-
     val playerStateLiveData: LiveData<PlayerState> = object : MediatorLiveData<PlayerState>() {
         private var loading : Boolean = false
         private var songList : PagedList<Track>? = null
-
         init {
             super.addSource(loadingLiveData) { isLoading ->
                 loading = isLoading
@@ -68,7 +80,6 @@ class PlayerViewModel : ViewModel() {
                 value = PlayerState(songList, loading)
             }
         }
-
     }
 
     fun searchEntered(inputString: String) {
@@ -107,6 +118,20 @@ class PlayerViewModel : ViewModel() {
             collectionResponse.track.streamUrl = transcoding.url
         } ?: run { return false }
         return true
+    }
+
+    fun queueTrack(track: Track) {
+        playlist.add(track)
+        broadcasters.playlistChannel.offer(playlist)
+    }
+
+    fun playTrack(track: Track) {
+
+    }
+
+    fun clearPlaylistPosition(position: Int) {
+        playlist.removeAt(position)
+        broadcasters.playlistChannel.offer(playlist)
     }
 }
 

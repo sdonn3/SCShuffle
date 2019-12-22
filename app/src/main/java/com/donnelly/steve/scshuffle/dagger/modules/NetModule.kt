@@ -3,6 +3,7 @@ package com.donnelly.steve.scshuffle.dagger.modules
 import android.app.Application
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
+import com.donnelly.steve.scshuffle.application.ShuffleApplication
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
@@ -16,14 +17,23 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
+private const val BYTES_PER_KILOBYTE = 1024
+private const val KILOBYTES_PER_MEGABYTE = 1024
+
 @Module
-class NetModule(val baseUrl: String, val baseUrlV2: String) {
-    companion object {
-        private const val BYTES_PER_KILOBYTE = 1024
-        private const val KILOBYTES_PER_MEGABYTE = 1024
-    }
+class NetModule {
+
+    @Provides
+    @Named
+    fun provideBaseUrl() = "https://api.soundcloud.com"
+
+    @Provides
+    @Named
+    fun provideBaseUrlV2() = "https://api-v2.soundcloud.com"
 
     @Provides
     @Singleton
@@ -61,7 +71,7 @@ class NetModule(val baseUrl: String, val baseUrlV2: String) {
     fun provideRetrofit(gson: Gson, okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .baseUrl(baseUrl)
+                .baseUrl(provideBaseUrl())
                 .client(okHttpClient)
                 .build()
     }
@@ -77,7 +87,7 @@ class NetModule(val baseUrl: String, val baseUrlV2: String) {
     fun provideSCServiceV2(gson: Gson, okHttpClient: OkHttpClient): SCServiceV2 {
         val retrofit = Retrofit.Builder()
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .baseUrl(baseUrlV2)
+                .baseUrl(provideBaseUrlV2())
                 .client(okHttpClient)
                 .build()
         return retrofit.create(SCServiceV2::class.java)

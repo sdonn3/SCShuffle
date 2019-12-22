@@ -4,18 +4,21 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.MutableLiveData
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.exts.transformDuration
 import com.donnelly.steve.scshuffle.network.models.Track
-import com.jakewharton.rxbinding2.view.clicks
 import kotlinx.android.synthetic.main.item_library_track.view.*
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.onEach
+import reactivecircus.flowbinding.android.view.clicks
 
-class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAdapter.TrackViewHolder>(TrackDiffCallback()) {
+class LibraryAdapter (
+        val context: Context,
+        val playCallback: (Track) -> Unit,
+        val queueCallback: (Track) -> Unit
+) : PagedListAdapter<Track, LibraryAdapter.TrackViewHolder>(TrackDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder =
         TrackViewHolder(LayoutInflater.from(context).inflate(R.layout.item_library_track, parent, false))
@@ -38,22 +41,14 @@ class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAda
 
                 ivPlay
                         .clicks()
-                        .throttleFirst(500L, TimeUnit.MILLISECONDS)
-                        .subscribe{
-                            libraryAdapterStatus.value = LibraryStatus(
-                                    LibraryStatus.Intent.Play,
-                                    track
-                            )
+                        .onEach{
+                            playCallback.invoke(track)
                         }
 
                 ivQueue
                         .clicks()
-                        .throttleFirst(500L, TimeUnit.MILLISECONDS)
-                        .subscribe{
-                            libraryAdapterStatus.value = LibraryStatus(
-                                    LibraryStatus.Intent.Queue,
-                                    track
-                            )
+                        .onEach{
+                            queueCallback.invoke(track)
                         }
             }
         }
@@ -66,15 +61,6 @@ class LibraryAdapter (val context: Context) : PagedListAdapter<Track, LibraryAda
 
         override fun areContentsTheSame(oldItem: Track, newItem: Track): Boolean {
             return oldItem == newItem
-        }
-    }
-
-    data class LibraryStatus(
-            val intent: Intent,
-            val track: Track
-    ) {
-        enum class Intent {
-            Play, Queue
         }
     }
 }

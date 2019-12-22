@@ -4,33 +4,29 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.RecyclerView
 import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.network.models.Track
-import com.jakewharton.rxbinding2.view.clicks
 import kotlinx.android.synthetic.main.item_playlist_track.view.*
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.onEach
+import reactivecircus.flowbinding.android.view.clicks
 
 
-class PlaylistAdapter (val context: Context) : RecyclerView.Adapter<PlaylistAdapter.TrackViewHolder>() {
+class PlaylistAdapter(val context: Context, val clearCallback: (Int) -> Unit) : RecyclerView.Adapter<PlaylistAdapter.TrackViewHolder>() {
 
-    var playlistStatus = MutableLiveData<PlaylistStatus>()
-
-    var playlist : ArrayList<Track> = ArrayList()
+    private var playlist = listOf<Track>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder =
             TrackViewHolder(LayoutInflater.from(context).inflate(R.layout.item_playlist_track, parent, false))
 
-
     override fun onBindViewHolder(holder: TrackViewHolder, position: Int) {
         val track = playlist[position]
-        track.let{
+        track.let {
             holder.bind(track, position)
         }
     }
 
-    fun setTrackList(trackList: ArrayList<Track>) {
+    fun setTrackList(trackList: List<Track>) {
         playlist = trackList
         notifyDataSetChanged()
     }
@@ -39,11 +35,10 @@ class PlaylistAdapter (val context: Context) : RecyclerView.Adapter<PlaylistAdap
 
     inner class TrackViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         fun bind(track: Track, position: Int) {
-            itemView.apply{
+            itemView.apply {
                 if (position == 0) {
                     ivClear.visibility = View.GONE
-                }
-                else {
+                } else {
                     tvCurrentlyPlaying.visibility = View.GONE
                 }
 
@@ -51,23 +46,10 @@ class PlaylistAdapter (val context: Context) : RecyclerView.Adapter<PlaylistAdap
 
                 ivClear
                         .clicks()
-                        .throttleFirst(500L, TimeUnit.MILLISECONDS)
-                        .subscribe{
-                            playlistStatus.value = PlaylistStatus(
-                                    PlaylistStatus.Intent.Clear,
-                                    position
-                            )
+                        .onEach {
+                            clearCallback.invoke(position)
                         }
             }
-        }
-    }
-
-    data class PlaylistStatus(
-            val intent: Intent,
-            val position: Int
-    ) {
-        enum class Intent {
-            Clear
         }
     }
 }

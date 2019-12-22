@@ -15,7 +15,7 @@ interface SCServiceV2 {
     suspend fun getLikes(@Path("userId") userId: Int, @Query("limit") limit: Int, @Query("offset") offset: Long?): TrackLikesResponse
 
     @GET("")
-    suspend fun getStreamUrl(@Url urlString: String, @Query("client_id") clientId: String): StreamUrlResponse
+    suspend fun getStreamUrl(@Url urlString: String, @Query("client_id") clientId: String = SOUNDCLOUD_CLIENT_ID): StreamUrlResponse
 
     @GET("")
     suspend fun getWaveform(@Url urlString: String): WaveFormResponse

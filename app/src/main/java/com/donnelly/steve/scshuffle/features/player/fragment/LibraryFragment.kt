@@ -20,13 +20,17 @@ import kotlinx.android.synthetic.main.fragment_library.*
 class LibraryFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.fragment_library, container, false)
+            inflater.inflate(R.layout.fragment_library, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        activity?.let{ activity->
+        activity?.let { activity ->
             val viewmodel = ViewModelProviders.of(activity).get(PlayerViewModel::class.java)
-            val adapter = LibraryAdapter(activity)
+            val adapter = LibraryAdapter(activity, playCallback = { track ->
+                viewmodel.playTrack(track)
+            }, queueCallback = { track ->
+                viewmodel.queueTrack(track)
+            })
 
             rvLibraryTracks.apply {
                 setHasFixedSize(true)
@@ -37,17 +41,6 @@ class LibraryFragment : Fragment() {
 
             viewmodel.playerStateLiveData.observe(viewLifecycleOwner, Observer { playerState ->
                 adapter.submitList(playerState.songPagedList)
-            })
-
-            adapter.libraryAdapterStatus.observe(this, Observer {
-                when (it.intent) {
-                    LibraryAdapter.LibraryStatus.Intent.Play -> {
-                        (activity as PlayerActivity).playSong(it.track)
-                    }
-                    LibraryAdapter.LibraryStatus.Intent.Queue -> {
-                        (activity as PlayerActivity).queueSong(it.track)
-                    }
-                }
             })
         }
     }

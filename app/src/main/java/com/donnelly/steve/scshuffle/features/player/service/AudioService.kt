@@ -1,39 +1,50 @@
 package com.donnelly.steve.scshuffle.features.player.service
 
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
-import android.net.wifi.WifiManager
 import android.os.Binder
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
+import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.Track
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class AudioService : Service(), MediaPlayer.OnPreparedListener,  MediaPlayer.OnCompletionListener {
+private const val NOTIFICATION_CHANNEL = "SC_AUDIO_SERVICE"
+private const val NOTIFICATION_ID = 95
 
+class AudioService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener {
+
+    private val serviceJob = Job()
+    private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
     private val binder = AudioBinder()
-
     private var audioPlayer: MediaPlayer? = null
+    private lateinit var notificationManager: NotificationManager
 
-    @Inject lateinit var scServiceV2: SCServiceV2
-    @Inject lateinit var rxBus: RxBus
-    @Inject lateinit var trackDao: TrackDao
+    @Inject
+    lateinit var scServiceV2: SCServiceV2
+    @Inject
+    lateinit var trackDao: TrackDao
+    @Inject
+    lateinit var broadcasters: Broadcasters
 
-    private val playlist = ArrayList<Track>()
-
-    private val disposables: CompositeDisposable by lazy { CompositeDisposable() }
+    private var playlist = mutableListOf<Track>()
 
     override fun onCreate() {
         audioPlayer?.setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)
@@ -46,29 +57,29 @@ class AudioService : Service(), MediaPlayer.OnPreparedListener,  MediaPlayer.OnC
         audioPlayer?.setOnPreparedListener(this)
         audioPlayer?.setOnCompletionListener(this)
 
-        (application as ShuffleApplication).playerComponent.inject(this)
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
+                .setContentTitle("SCShuffle")
+                .setContentText("The SCShuffle app is ready to play your music")
+                .build()
 
-        //TODO: Test if this is necessary
-        val wifiLock: WifiManager.WifiLock = (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
-                .createWifiLock(WifiManager.WIFI_MODE_FULL, "SCShuffle::PlayerActivity::WakeLock")
-        wifiLock.acquire()
-        Thread(MediaObserver()).start()
+        startForeground(NOTIFICATION_ID, notification)
+        broadcasters.playlistChannel.asFlow().onEach {  newPlaylist ->
+            playlist = newPlaylist.toMutableList()
+        }.launchIn(serviceScope)
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
         goToNextSong()
     }
 
-    private fun getUrlAndStream(track: Track?){
-        track?.streamUrl?.let{urlQueryString ->
-            disposables += scServiceV2
-                    .getStreamUrl(urlQueryString, SCServiceV2.SOUNDCLOUD_CLIENT_ID)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe{response ->
-                        Log.d("ScShuffle", "Playing Song")
-                        startAudioTrack(response.url)
-                    }
+    private fun getUrlAndStream(track: Track?) {
+        track?.streamUrl?.let { urlQueryString ->
+            serviceScope.launch {
+                val response = scServiceV2.getStreamUrl(urlQueryString)
+                broadcasters.trackChannel.offer(track)
+                startAudioTrack(response.url)
+            }
         }
     }
 
@@ -81,6 +92,7 @@ class AudioService : Service(), MediaPlayer.OnPreparedListener,  MediaPlayer.OnC
             }
         }
     }
+
     fun playAudio() {
         audioPlayer?.start()
     }
@@ -91,33 +103,22 @@ class AudioService : Service(), MediaPlayer.OnPreparedListener,  MediaPlayer.OnC
 
     fun queueSong(track: Track) {
         playlist.add(track)
-        notifyAboutPlaylistChanges()
+        broadcasters.playlistChannel.offer(playlist)
     }
 
     fun playSong(track: Track) {
-        if (playlist.isNotEmpty()){
-            playlist.clear()
-            playlist.add(track)
+        if (playlist.isNotEmpty()) {
+            playlist.add(index = 0, element = track)
             getUrlAndStream(track)
-            notifyAboutPlaylistChanges()
-        }
-        else {
+        } else {
             loadRandomTrack()
         }
-    }
-
-    fun removeSong(position: Int) {
-        if (playlist.size >= (position + 1)) {
-            playlist.removeAt(position)
-        }
-        notifyAboutPlaylistChanges()
     }
 
     fun goToNextSong() {
         if (playlist.size > 1) {
             playlist.removeAt(0)
             getUrlAndStream(playlist[0])
-            notifyAboutPlaylistChanges()
         } else {
             playlist.clear()
             loadRandomTrack()
@@ -128,51 +129,25 @@ class AudioService : Service(), MediaPlayer.OnPreparedListener,  MediaPlayer.OnC
         player?.start()
     }
 
-    inner class MediaObserver : Runnable {
-        private val stop = AtomicBoolean(false)
-
-        override fun run() {
-            while (!stop.get()) {
-                try {
-                    audioPlayer?.let {
-                        if (it.isPlaying) {
-                            rxBus.setEvent(Pair(it.currentPosition, it.duration))
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                try {
-                    Thread.sleep(200)
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
-            }
-        }
-    }
-
     inner class AudioBinder : Binder() {
-        fun getService() : AudioService = this@AudioService
+        fun getService(): AudioService = this@AudioService
     }
 
     override fun onBind(intent: Intent): IBinder {
         return binder
     }
 
-    private fun notifyAboutPlaylistChanges() {
-        rxBus.setEvent(playlist)
+    private fun loadRandomTrack() {
+        serviceScope.launch {
+            val track = trackDao.returnRandomTrack()
+            getUrlAndStream(track)
+            playlist.add(index = 0, element = track)
+        }
     }
 
-    fun loadRandomTrack() {
-        disposables += trackDao
-                .returnRandomTrack()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    Log.d("ScShuffle", "Loaded track from database")
-                    playlist.add(it)
-                    getUrlAndStream(it)
-                    notifyAboutPlaylistChanges()
-                }
+    override fun onDestroy() {
+        serviceJob.cancel()
+        notificationManager.cancel(NOTIFICATION_ID)
+        super.onDestroy()
     }
 }

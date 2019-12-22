@@ -1,27 +1,20 @@
 package com.donnelly.steve.scshuffle.dagger.components
 
+import com.donnelly.steve.scshuffle.application.ShuffleApplication
 import com.donnelly.steve.scshuffle.dagger.modules.AppModule
 import com.donnelly.steve.scshuffle.dagger.modules.DatabaseModule
 import com.donnelly.steve.scshuffle.dagger.modules.NetModule
-import com.donnelly.steve.scshuffle.database.ShuffleDatabase
-import com.donnelly.steve.scshuffle.database.dao.TrackDao
-import com.donnelly.steve.scshuffle.features.player.PlayerActivity
-import com.donnelly.steve.scshuffle.features.player.service.AudioService
-import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
-import com.donnelly.steve.scshuffle.network.SCService
-import com.donnelly.steve.scshuffle.network.SCServiceV2
+import com.donnelly.steve.scshuffle.dagger.modules.ViewModelModule
+import dagger.BindsInstance
 import dagger.Component
+import dagger.android.AndroidInjector
 import javax.inject.Singleton
 
 @Singleton
-@Component(modules=[AppModule::class, DatabaseModule::class, NetModule::class])
-interface PlayerComponent{
-    fun inject(activity: PlayerActivity)
-    fun inject(viewModel: PlayerViewModel)
-    fun inject(service: AudioService)
-
-    fun trackDao() : TrackDao
-    fun shuffleDatabase() : ShuffleDatabase
-    fun scService() : SCService
-    fun scServiceV2() : SCServiceV2
+@Component(modules = [AppModule::class, DatabaseModule::class, NetModule::class, ViewModelModule::class])
+interface PlayerComponent : AndroidInjector<ShuffleApplication> {
+    @Component.Factory
+    interface Factory {
+        fun create(appModule: AppModule, databaseModule: DatabaseModule, @BindsInstance shuffleApplication: ShuffleApplication): PlayerComponent
+    }
 }

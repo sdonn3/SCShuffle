@@ -1,39 +1,39 @@
 package com.donnelly.steve.scshuffle.features.player
 
-import android.content.*
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.lifecycleScope
 import androidx.palette.graphics.Palette
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.donnelly.steve.scshuffle.R
+import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.exts.isVisible
-import com.donnelly.steve.scshuffle.exts.shuffleApp
 import com.donnelly.steve.scshuffle.features.player.adapter.ScreenSlidePagerAdapter
 import com.donnelly.steve.scshuffle.features.player.service.AudioService
 import com.donnelly.steve.scshuffle.features.player.viewmodel.PlayerViewModel
 import com.donnelly.steve.scshuffle.glide.GlideApp
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
-import com.donnelly.steve.scshuffle.network.models.Track
 import kotlinx.android.synthetic.main.activity_player.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import reactivecircus.flowbinding.android.view.clicks
 import reactivecircus.flowbinding.appcompat.queryTextChanges
 import javax.inject.Inject
@@ -43,20 +43,23 @@ import javax.inject.Inject
 class PlayerActivity : AppCompatActivity() {
 
     @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+    @Inject
     lateinit var scService: SCService
     @Inject
     lateinit var scServiceV2: SCServiceV2
-
     @Inject
     lateinit var session: Session
     @Inject
     lateinit var trackDao: TrackDao
     @Inject
     lateinit var sharedPreferences: SharedPreferences
+    @Inject
+    lateinit var broadcasters: Broadcasters
 
-    private var audioServiceBinder: AudioService.AudioBinder? = null
     private lateinit var viewmodel: PlayerViewModel
 
+    private var audioServiceBinder: AudioService.AudioBinder? = null
     private var serviceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(componentName: ComponentName?) {}
         override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
@@ -64,15 +67,15 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    var currentlyPlayingTrack: Track? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
-        shuffleApp.playerComponent.inject(this)
-        bindAudioService()
-        viewmodel = ViewModelProviders.of(this).get(PlayerViewModel::class.java)
+        viewmodel = ViewModelProviders.of(this, viewModelFactory).get(PlayerViewModel::class.java)
+
+        Intent(this, AudioService::class.java).also { intent ->
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+        }
 
         setSupportActionBar(toolbar)
         viewpager.adapter = ScreenSlidePagerAdapter(supportFragmentManager)
@@ -83,44 +86,37 @@ class PlayerActivity : AppCompatActivity() {
                     && playerState.songPagedList.isNullOrEmpty()
         })
 
-        viewmodel.playlist.observe(this, Observer {
-            Log.d("ScShuffle", "Triggered from song ending")
-            if (it.size > 0) {
-                currentlyPlayingTrack = it[0]
-                toolbar.title = it[0].title
-                GlideApp
-                        .with(this)
-                        .load(currentlyPlayingTrack?.artworkUrl)
-                        .into(ivPlayerImage)
+        broadcasters.trackChannel.asFlow().onEach { track ->
+            GlideApp
+                    .with(this)
+                    .load(track?.artworkUrl)
+                    .into(ivPlayerImage)
 
-                GlideApp
-                        .with(this)
-                        .asBitmap()
-                        .load(currentlyPlayingTrack?.artworkUrl)
-                        .into(object : SimpleTarget<Bitmap>() {
-                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                visualizer.clear()
-                                val palette = Palette.from(resource).generate()
-                                toolbar.setBackgroundColor(palette.getDarkVibrantColor(Color.WHITE))
-                                toolbar.setTitleTextColor(palette.getLightVibrantColor(Color.LTGRAY))
+            GlideApp
+                    .with(this)
+                    .asBitmap()
+                    .load(track?.artworkUrl)
+                    .into(object : SimpleTarget<Bitmap>() {
+                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                            visualizer.clear()
+                            val palette = Palette.from(resource).generate()
+                            toolbar.setBackgroundColor(palette.getDarkVibrantColor(Color.WHITE))
+                            toolbar.setTitleTextColor(palette.getLightVibrantColor(Color.LTGRAY))
 
-                                it[0].waveformUrl?.let { waveUrl ->
-                                    disposables += scServiceV2
-                                            .getWaveform(waveUrl)
-                                            .subscribeOn(Schedulers.io())
-                                            .observeOn(AndroidSchedulers.mainThread())
-                                            .subscribe { waveResponse ->
-                                                visualizer.setPalette(palette)
-                                                visualizer.setAmplitudes(waveResponse.samples)
-                                            }
+                            track?.waveformUrl?.let { waveUrl ->
+                                lifecycleScope.launch {
+                                    val waveResponse = scServiceV2.getWaveform(waveUrl)
+                                    visualizer.setPalette(palette)
+                                    visualizer.setAmplitudes(waveResponse.samples)
                                 }
                             }
-                        })
-            }
-        })
+                        }
+                    })
+        }
 
         btnLoad.clicks()
                 .onEach { viewmodel.loadTracksToDatabase()}
+                .launchIn(lifecycleScope)
 
         ivPlay.clicks()
                 .onEach { audioServiceBinder?.getService()?.playAudio() }
@@ -155,13 +151,5 @@ class PlayerActivity : AppCompatActivity() {
                     .launchIn(lifecycleScope)
         }
         return true
-    }
-
-    private fun bindAudioService() {
-        if (audioServiceBinder == null) {
-            Intent(this, AudioService::class.java).also { intent ->
-                bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-            }
-        }
     }
 }
