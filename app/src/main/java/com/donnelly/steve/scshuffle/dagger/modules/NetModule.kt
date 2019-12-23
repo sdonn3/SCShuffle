@@ -2,7 +2,7 @@ package com.donnelly.steve.scshuffle.dagger.modules
 
 import android.content.SharedPreferences
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
-import com.donnelly.steve.scshuffle.dagger.Session
+import com.donnelly.steve.scshuffle.application.Session
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.google.gson.FieldNamingPolicy

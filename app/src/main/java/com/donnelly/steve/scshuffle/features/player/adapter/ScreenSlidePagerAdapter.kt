@@ -5,17 +5,15 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentStatePagerAdapter
 import com.donnelly.steve.scshuffle.features.player.fragment.LibraryFragment
 import com.donnelly.steve.scshuffle.features.player.fragment.PlaylistFragment
-
-class ScreenSlidePagerAdapter(fragmentManager: FragmentManager) : FragmentStatePagerAdapter(fragmentManager) {
-    companion object {
-        private const val NUM_PAGES = 2
-    }
-
+private const val NUM_PAGES = 2
+class ScreenSlidePagerAdapter(fragmentManager: FragmentManager) : FragmentStatePagerAdapter(
+        fragmentManager,
+        BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
+) {
     override fun getItem(position: Int): Fragment {
         return if (position == 0) {
             LibraryFragment()
-        }
-        else {
+        } else {
             PlaylistFragment()
         }
     }

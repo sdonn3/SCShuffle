@@ -1,12 +1,10 @@
 package com.donnelly.steve.scshuffle.features.login
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.donnelly.steve.scshuffle.R
-import com.donnelly.steve.scshuffle.dagger.Session
+import com.donnelly.steve.scshuffle.application.Session
 import com.donnelly.steve.scshuffle.exts.launchActivity
-import com.donnelly.steve.scshuffle.exts.shuffleApp
 import com.donnelly.steve.scshuffle.features.player.PlayerActivity
 import com.donnelly.steve.scshuffle.features.webAuth.WebAuthActivity
 import com.donnelly.steve.scshuffle.network.SCService

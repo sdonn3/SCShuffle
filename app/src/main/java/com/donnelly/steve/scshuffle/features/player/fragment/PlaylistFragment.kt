@@ -4,8 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.ViewModelProviders
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
@@ -29,7 +28,7 @@ class PlaylistFragment : DaggerFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         activity?.let{activity->
-            viewmodel = ViewModelProviders.of(activity).get(PlayerViewModel::class.java)
+            viewmodel = ViewModelProvider(activity).get(PlayerViewModel::class.java)
             val adapter = PlaylistAdapter(activity, clearCallback = { clearPosition ->
                 viewmodel.clearPlaylistPosition(clearPosition)
             })

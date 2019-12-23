@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.donnelly.steve.scshuffle.R
@@ -22,7 +22,7 @@ class LibraryFragment : DaggerFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         activity?.let { activity ->
-            val viewmodel = ViewModelProviders.of(activity).get(PlayerViewModel::class.java)
+            val viewmodel = ViewModelProvider(activity).get(PlayerViewModel::class.java)
             val adapter = LibraryAdapter(activity, playCallback = { track ->
                 viewmodel.playTrack(track)
             }, queueCallback = { track ->

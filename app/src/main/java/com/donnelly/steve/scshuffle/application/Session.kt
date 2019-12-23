@@ -1,4 +1,4 @@
-package com.donnelly.steve.scshuffle.dagger
+package com.donnelly.steve.scshuffle.application
 
 import android.content.SharedPreferences
 

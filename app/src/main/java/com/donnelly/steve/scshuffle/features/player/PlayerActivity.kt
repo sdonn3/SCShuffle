@@ -9,10 +9,9 @@ import android.view.Menu
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.lifecycleScope
 import com.donnelly.steve.scshuffle.R
-import com.donnelly.steve.scshuffle.dagger.Session
+import com.donnelly.steve.scshuffle.application.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.exts.isVisible
 import com.donnelly.steve.scshuffle.features.player.adapter.ScreenSlidePagerAdapter
@@ -62,7 +61,7 @@ class PlayerActivity : DaggerAppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
-        viewmodel = ViewModelProviders.of(this, viewModelFactory)[PlayerViewModel::class.java]
+        viewmodel = ViewModelProvider(this, viewModelFactory)[PlayerViewModel::class.java]
 
         Intent(this, AudioService::class.java).also { intent ->
             bindService(intent, serviceConnection, BIND_AUTO_CREATE)

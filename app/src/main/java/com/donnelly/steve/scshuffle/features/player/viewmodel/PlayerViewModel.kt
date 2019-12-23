@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.*
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
-import com.donnelly.steve.scshuffle.dagger.Session
+import com.donnelly.steve.scshuffle.application.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.features.player.playlist.Playlist
 import com.donnelly.steve.scshuffle.network.SCService
