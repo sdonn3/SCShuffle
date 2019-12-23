@@ -4,17 +4,14 @@ import android.net.Uri
 import androidx.lifecycle.*
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
-import com.donnelly.steve.scshuffle.application.ShuffleApplication
-import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
+import com.donnelly.steve.scshuffle.features.player.playlist.Playlist
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.CollectionResponse
 import com.donnelly.steve.scshuffle.network.models.Track
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,16 +23,8 @@ class PlayerViewModel @Inject constructor(
         private val trackDao: TrackDao,
         private val scService: SCService,
         private val scServiceV2: SCServiceV2,
-        private val broadcasters: Broadcasters
+        private val playlist: Playlist
 ) : ViewModel() {
-
-    private var playlist = mutableListOf<Track>()
-
-    init {
-        broadcasters.playlistChannel.asFlow().onEach { newPlaylist ->
-            playlist = newPlaylist.toMutableList()
-        }
-    }
 
     private val allTracksLiveData = LivePagedListBuilder(trackDao.getAllTracksPaged(),
             PagedList.Config.Builder()
@@ -111,19 +100,9 @@ class PlayerViewModel @Inject constructor(
         return true
     }
 
-    fun queueTrack(track: Track) {
-        playlist.add(track)
-        broadcasters.playlistChannel.offer(playlist)
-    }
-
-    fun playTrack(track: Track) {
-
-    }
-
-    fun clearPlaylistPosition(position: Int) {
-        playlist.removeAt(position)
-        broadcasters.playlistChannel.offer(playlist)
-    }
+    fun queueTrack(track: Track) = playlist.addSong(track)
+    fun playTrack(track: Track) = playlist.addSongAtFirstPosition(track)
+    fun clearPlaylistPosition(position: Int) = playlist.removeSongAtPosition(position)
 }
 
 class PlayerState(val songPagedList: PagedList<Track>?, val loadingInProgress: Boolean = false)

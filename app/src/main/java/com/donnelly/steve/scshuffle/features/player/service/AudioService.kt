@@ -4,11 +4,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
-import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
+import com.donnelly.steve.scshuffle.features.player.playlist.Playlist
 import com.donnelly.steve.scshuffle.network.SCServiceV2
 import com.donnelly.steve.scshuffle.network.models.Track
 import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.Player.EventListener
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
@@ -29,6 +31,9 @@ class AudioService : DaggerService() {
     @Inject
     lateinit var trackDao: TrackDao
 
+    @Inject
+    lateinit var playlist: Playlist
+
     lateinit var dataSourceFactory: DefaultDataSourceFactory
     lateinit var exoPlayer: ExoPlayer
 
@@ -39,11 +44,25 @@ class AudioService : DaggerService() {
         dataSourceFactory = DefaultDataSourceFactory(applicationContext,
                 Util.getUserAgent(applicationContext, application.applicationInfo.name))
         exoPlayer.setForegroundMode(true)
-        loadRandomTrack()
+        exoPlayer.repeatMode = ExoPlayer.REPEAT_MODE_OFF
+        exoPlayer.addListener(
+                object : EventListener {
+                    override fun onPositionDiscontinuity(reason: Int) {
+                        super.onPositionDiscontinuity(reason)
+                        if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION) {
+                            playlist.removeSongAtPosition(0)
+                        }
+                    }
+                }
+        )
+        playlist.addFirstSongChangedListener { track ->
+            track?.getUrlAndStream()
+        }
+        playlist.loadRandomSong()
     }
 
-    private fun getUrlAndStream(track: Track?) {
-        track?.streamUrl?.let { urlQueryString ->
+    private fun Track.getUrlAndStream() {
+        streamUrl?.let { urlQueryString ->
             serviceScope.launch {
                 val response = scServiceV2.getStreamUrl(urlQueryString)
                 startAudioTrack(response.url)
@@ -51,9 +70,9 @@ class AudioService : DaggerService() {
         }
     }
 
-    private fun startAudioTrack(audioString: String) {
+    private fun startAudioTrack(audioAddress: String) {
         val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
-                .createMediaSource(Uri.parse(audioString))
+                .createMediaSource(Uri.parse(audioAddress))
         exoPlayer.prepare(mediaSource)
         exoPlayer.playWhenReady = true
     }
@@ -64,15 +83,6 @@ class AudioService : DaggerService() {
 
     override fun onBind(intent: Intent): IBinder {
         return binder
-    }
-
-    private fun loadRandomTrack() {
-        serviceScope.launch (Dispatchers.IO) {
-            val track = trackDao.returnRandomTrack()
-            withContext(Dispatchers.Main) {
-                getUrlAndStream(track)
-            }
-        }
     }
 
     override fun onDestroy() {

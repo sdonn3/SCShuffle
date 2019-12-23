@@ -44,11 +44,7 @@ class PlaylistAdapter(val context: Context, val clearCallback: (Int) -> Unit) : 
 
                 tvTrackName.text = track.title
 
-                ivClear
-                        .clicks()
-                        .onEach {
-                            clearCallback.invoke(position)
-                        }
+                ivClear.setOnClickListener { clearCallback.invoke(position) }
             }
         }
     }

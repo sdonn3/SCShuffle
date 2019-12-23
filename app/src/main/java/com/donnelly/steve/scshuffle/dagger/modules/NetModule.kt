@@ -1,10 +1,7 @@
 package com.donnelly.steve.scshuffle.dagger.modules
 
-import android.app.Application
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
 import com.donnelly.steve.scshuffle.application.ShuffleApplication
-import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.network.SCService
 import com.donnelly.steve.scshuffle.network.SCServiceV2
@@ -18,7 +15,6 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 

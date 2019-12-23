@@ -11,45 +11,42 @@ import com.donnelly.steve.scshuffle.R
 import com.donnelly.steve.scshuffle.exts.transformDuration
 import com.donnelly.steve.scshuffle.network.models.Track
 import kotlinx.android.synthetic.main.item_library_track.view.*
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import reactivecircus.flowbinding.android.view.clicks
 
-class LibraryAdapter (
+class LibraryAdapter(
         val context: Context,
         val playCallback: (Track) -> Unit,
         val queueCallback: (Track) -> Unit
 ) : PagedListAdapter<Track, LibraryAdapter.TrackViewHolder>(TrackDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackViewHolder =
-        TrackViewHolder(LayoutInflater.from(context).inflate(R.layout.item_library_track, parent, false))
+            TrackViewHolder(LayoutInflater.from(context).inflate(R.layout.item_library_track, parent, false))
 
     override fun onBindViewHolder(holder: TrackViewHolder, position: Int) {
         val track = getItem(position)
-        track?.let{
+        track?.let {
             holder.bind(track)
         }
     }
 
     inner class TrackViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         fun bind(track: Track) {
-            itemView.apply{
+            itemView.apply {
                 tvTrackName.text = track.title
 
-                track.duration?.let{
+                track.duration?.let {
                     tvDuration.text = it.transformDuration()
                 }
 
-                ivPlay
-                        .clicks()
-                        .onEach{
-                            playCallback.invoke(track)
-                        }
+                ivPlay.setOnClickListener {
+                    playCallback.invoke(track)
+                }
 
-                ivQueue
-                        .clicks()
-                        .onEach{
-                            queueCallback.invoke(track)
-                        }
+                ivQueue.setOnClickListener {
+                    queueCallback.invoke(track)
+                }
             }
         }
     }

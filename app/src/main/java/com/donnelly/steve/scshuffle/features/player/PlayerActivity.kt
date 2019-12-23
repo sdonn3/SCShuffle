@@ -12,7 +12,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.lifecycleScope
 import com.donnelly.steve.scshuffle.R
-import com.donnelly.steve.scshuffle.broadcast.Broadcasters
 import com.donnelly.steve.scshuffle.dagger.Session
 import com.donnelly.steve.scshuffle.database.dao.TrackDao
 import com.donnelly.steve.scshuffle.exts.isVisible
@@ -47,8 +46,6 @@ class PlayerActivity : DaggerAppCompatActivity() {
     lateinit var session: Session
     @Inject
     lateinit var trackDao: TrackDao
-    @Inject
-    lateinit var broadcasters: Broadcasters
 
     private lateinit var viewmodel: PlayerViewModel
 
