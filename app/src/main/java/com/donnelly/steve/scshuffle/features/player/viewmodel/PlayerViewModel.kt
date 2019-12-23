@@ -58,7 +58,7 @@ class PlayerViewModel @Inject constructor(
         else -> getFilteredTracksFromDatabse(searchString)
     }
     private val loadingLiveData = MutableLiveData<Boolean>(false)
-    val playerStateLiveData: LiveData<PlayerState> = object : MediatorLiveData<PlayerState>() {
+    val loadingStateLiveData: LiveData<PlayerState> = object : MediatorLiveData<PlayerState>() {
         private var loading : Boolean = false
         private var songList : PagedList<Track>? = null
         init {
